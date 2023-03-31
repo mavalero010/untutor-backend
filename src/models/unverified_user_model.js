@@ -18,7 +18,7 @@ const unverifiedUserSchema = new mongoose.Schema({
       type:mongoose.Schema.ObjectId,
       ref:'Subject'}],
     phone:{type:String},
-    createdAt: {type: Date, expires:30, default: Date.now}
+    createdAt: {type: Date, expires:3600, default: Date.now}
     },{
       versionKey:false
     })

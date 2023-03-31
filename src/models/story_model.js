@@ -8,7 +8,7 @@ const storySchema = new mongoose.Schema(
     ID_comment_list: [
       {
         type: mongoose.Schema.ObjectId,
-        ref: "Comment",
+        ref: 'Comment',
       },
     ],
   },
@@ -17,4 +17,4 @@ const storySchema = new mongoose.Schema(
   }
 )
 
-module.exports = mongoose.model("Story", storySchema)
+module.exports = mongoose.model('Story', storySchema)

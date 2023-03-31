@@ -9,7 +9,7 @@ const commentSchema = new mongoose.Schema(
       ID_author: 
         {
           type: mongoose.Schema.ObjectId,
-          ref: "User",
+          ref: 'User',
         },
         likes:{type:Number,default:0}
     },
@@ -18,4 +18,4 @@ const commentSchema = new mongoose.Schema(
     }
   )
 
-module.exports = mongoose.model("Comment", commentSchema)
+module.exports = mongoose.model('Comment', commentSchema)

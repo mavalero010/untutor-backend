@@ -8,13 +8,13 @@ const sourceSchema = new mongoose.Schema(
     url_file: { type: String, require: true },
     ID_subject: {
       type: mongoose.Schema.ObjectId,
-      ref: "Subject",
+      ref: 'Subject',
       require: true,
     },
     ID_comment_list: [
       {
         type: mongoose.Schema.ObjectId,
-        ref: "Comment",
+        ref: 'Comment',
       },
     ],
   },
@@ -22,4 +22,4 @@ const sourceSchema = new mongoose.Schema(
     versionKey: false,
   }
 )
-module.exports = mongoose.model("Source", sourceSchema);
+module.exports = mongoose.model('Source', sourceSchema);

@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema(
     name: { type: String, require: true },
     IDUniversity: {
       type: mongoose.Schema.ObjectId,
-      ref: "University",
+      ref: 'University',
       require: true,
     },
     email: { type: String, require: true, unique: true },
@@ -15,13 +15,14 @@ const userSchema = new mongoose.Schema(
     biography: { type: String, require: true },
     active: { type: Boolean, require: true, default: false },
     role: { type: String, require: true },
-    IDFaculty: { type: String, require: true },
+    IDFaculty: { type: mongoose.Schema.ObjectId,
+      ref: 'faculty', require: true },
     city_of_birth: { type: String },
     perfil_photo: { type: String }, //TODO: Ajustar tipo de dato correcto
     ID_favorite_subjects: [
       {
         type: mongoose.Schema.ObjectId,
-        ref: "Subject",
+        ref: 'Subject',
       },
     ],
     phone: { type: String },
@@ -31,4 +32,4 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model('User', userSchema);
