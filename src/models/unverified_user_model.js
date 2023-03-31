@@ -1,5 +1,4 @@
-const mongoose = require("mongoose");
-
+const mongoose = require("mongoose")
 const unverifiedUserSchema = new mongoose.Schema(
   {
     name: { type: String, require: true },
@@ -30,6 +29,5 @@ const unverifiedUserSchema = new mongoose.Schema(
   {
     versionKey: false,
   }
-);
-
-module.exports = mongoose.model("UnverifiedUser", unverifiedUserSchema);
+)
+module.exports = mongoose.model("UnverifiedUser", unverifiedUserSchema)

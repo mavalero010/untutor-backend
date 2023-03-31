@@ -15,7 +15,7 @@ const saltRounds = parseInt(process.env.SALT_ROUNDS_ENCRYPT_PASSWORD)
 const registerUser = async (req,res)=>{
     try {
         let {name,IDUniversity,email,password,password_confirmation,
-            sex,birthday,biography,role,IDFaculty,city_of_birth,perfil_photo,
+            gender,birthday,biography,role,IDFaculty,city_of_birth,perfil_photo,
             ID_favorite_subjects,phone} = req.body
         
         
@@ -43,7 +43,7 @@ const registerUser = async (req,res)=>{
 
             // Crear un nuevo usuario
             password= hashedPassword
-            unv_user = new UnverifiedUser({name,IDUniversity,email,password,sex,birthday,biography,role,IDFaculty,city_of_birth,perfil_photo,ID_favorite_subjects,phone});
+            unv_user = new UnverifiedUser({name,IDUniversity,email,password,gender,birthday,biography,role,IDFaculty,city_of_birth,perfil_photo,ID_favorite_subjects,phone});
 
             // Generar token
             const token =  getToken({email, password});
@@ -86,7 +86,7 @@ const confirm = async (req, res) => {
        const { token } = req.params;
        
        // Verificar la data
-       const data = await getTokenData(token);
+       const data =  getTokenData(token);
 
        if(data === null) {
 
@@ -99,8 +99,16 @@ const confirm = async (req, res) => {
        
 
        const { email, password } = data.data;
+       // Verificar no existencia del usuario
+       const u = await User.findOne({ email }) || null
+       if(u !== null) {
+        return res.json({
+            success: false,
+            msg: 'Usuario ya existe'
+        })}
 
-       // Verificar existencia del usuario
+
+       // Verificar existencia del usuario en base de datos no verificada
        const unv_user = await UnverifiedUser.findOne({ email }) || null;
 
        if(unv_user === null) {
@@ -115,13 +123,18 @@ const confirm = async (req, res) => {
             return res.redirect('/error.html');
        }
 
-       // Actualizar usuario
-       
-       const {name,IDUniversity,sex,birthday,biography,role,IDFaculty,city_of_birth,perfil_photo,ID_favorite_subjects,phone}=unv_user
-       const user = new User({name,IDUniversity,email,password,sex,birthday,biography,role,IDFaculty,city_of_birth,perfil_photo,ID_favorite_subjects,phone})
-       user.active = true
-       await user.save();
 
+
+
+
+       // Actualizar usuario
+       const {name,IDUniversity,gender,birthday,biography,role,IDFaculty,city_of_birth,perfil_photo,ID_favorite_subjects,phone}=unv_user
+       const user = new User({name,IDUniversity,email,password,gender,birthday,biography,role,IDFaculty,city_of_birth,perfil_photo,ID_favorite_subjects,phone})
+       user.active = true
+       await user.save()
+
+       //Borro registro de base de datos de usuaruo no verificado
+       unv_user.deleteOne({email})
        // Redireccionar a la confirmación
        //TODO: Preguntar a Jhon que quiere que le retorne esto, probablemente un Bearer token como en el Login
        return res.redirect('/confirm.html');

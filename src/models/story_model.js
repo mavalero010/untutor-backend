@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require("mongoose")
 
 const storySchema = new mongoose.Schema(
   {
@@ -8,13 +8,14 @@ const storySchema = new mongoose.Schema(
     ID_comment_list: [
       {
         type: mongoose.Schema.ObjectId,
-        ref: "Comment",
+        ref: 'Comment',
       },
     ],
   },
   {
     versionKey: false,
   }
-);
 
-module.exports = mongoose.model("Story", storySchema);
+)
+
+module.exports = mongoose.model('Story', storySchema)
