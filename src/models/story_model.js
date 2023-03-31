@@ -15,6 +15,7 @@ const storySchema = new mongoose.Schema(
   {
     versionKey: false,
   }
+
 )
 
 module.exports = mongoose.model('Story', storySchema)
