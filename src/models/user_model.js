@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require("mongoose")
 
 const userSchema = new mongoose.Schema(
   {
@@ -10,12 +10,12 @@ const userSchema = new mongoose.Schema(
     },
     email: { type: String, require: true, unique: true },
     password: { type: String, require: true },
-    sex: { type: String, require: true },
+    gender: { type: String, require: true },
     birthday: { type: Date, require: true },
     biography: { type: String, require: true },
     active: { type: Boolean, require: true, default: false },
     role: { type: String, require: true },
-    IDFaculty: { type: String },
+    IDFaculty: { type: String, require: true },
     city_of_birth: { type: String },
     perfil_photo: { type: String }, //TODO: Ajustar tipo de dato correcto
     ID_favorite_subjects: [

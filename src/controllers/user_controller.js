@@ -15,7 +15,7 @@ const saltRounds = parseInt(process.env.SALT_ROUNDS_ENCRYPT_PASSWORD)
 const registerUser = async (req,res)=>{
     try {
         let {name,IDUniversity,email,password,password_confirmation,
-            sex,birthday,biography,role,IDFaculty,city_of_birth,perfil_photo,
+            gender,birthday,biography,role,IDFaculty,city_of_birth,perfil_photo,
             ID_favorite_subjects,phone} = req.body
         
         
@@ -43,7 +43,7 @@ const registerUser = async (req,res)=>{
 
             // Crear un nuevo usuario
             password= hashedPassword
-            unv_user = new UnverifiedUser({name,IDUniversity,email,password,sex,birthday,biography,role,IDFaculty,city_of_birth,perfil_photo,ID_favorite_subjects,phone});
+            unv_user = new UnverifiedUser({name,IDUniversity,email,password,gender,birthday,biography,role,IDFaculty,city_of_birth,perfil_photo,ID_favorite_subjects,phone});
 
             // Generar token
             const token =  getToken({email, password});
@@ -117,8 +117,8 @@ const confirm = async (req, res) => {
 
        // Actualizar usuario
        
-       const {name,IDUniversity,sex,birthday,biography,role,IDFaculty,city_of_birth,perfil_photo,ID_favorite_subjects,phone}=unv_user
-       const user = new User({name,IDUniversity,email,password,sex,birthday,biography,role,IDFaculty,city_of_birth,perfil_photo,ID_favorite_subjects,phone})
+       const {name,IDUniversity,gender,birthday,biography,role,IDFaculty,city_of_birth,perfil_photo,ID_favorite_subjects,phone}=unv_user
+       const user = new User({name,IDUniversity,email,password,gender,birthday,biography,role,IDFaculty,city_of_birth,perfil_photo,ID_favorite_subjects,phone})
        user.active = true
        await user.save();
 
