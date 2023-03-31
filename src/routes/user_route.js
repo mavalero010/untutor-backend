@@ -1,13 +1,14 @@
-const userController = require("../controllers/user_controller");
+const userController = require("../controllers/user_controller")
 const Router = require("express");
+const dotenv = require("dotenv")
+dotenv.config()
 
-const routerUser = Router();
+const routerUser = Router()
 
-routerUser.post("/api/user/register", userController.registerUser);
-routerUser.get("/api/user/confirm/:token", userController.confirm);
-routerUser.post("/api/user/login", userController.login);
-// todo: remove this endpoint
-routerUser.get("/api/user/home", userController.home);
+routerUser.post(`/api/${process.env.VERSION_API}/user/register`, userController.registerUser)
+routerUser.get(`/api/${process.env.VERSION_API}/user/confirm/:token`, userController.confirm)
+routerUser.post(`/api/${process.env.VERSION_API}/user/login`, userController.login)
+routerUser.get(`/api/${process.env.VERSION_API}/user/home`, userController.home)
 //TODO:Crear ruta de Logout donde el token expire forzosamente
 
 module.exports = routerUser;
