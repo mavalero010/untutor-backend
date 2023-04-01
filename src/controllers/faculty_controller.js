@@ -26,14 +26,12 @@ const getFaculty = async (req, res) => {
     }
 
     const { idfaculty } = req.query;
-    const faculty = await Faculty.findOne({ _id: idfaculty }).catch((err) =>
-      res.json({ msg: "idfaculty Inválido" })
-    );
+    const faculty = await Faculty.findOne({ _id: idfaculty }) || null;
 
     if (faculty === null) {
       return res.json({
         success: false,
-        msg: "Usuario no existe o contraseña inválida",
+        msg: "Usuario no existe, idfaculty inválido",
       });
     }
 

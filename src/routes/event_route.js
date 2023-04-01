@@ -5,6 +5,7 @@ dotenv.config()
 
 const routerEvent = Router()
 
-routerEvent.get(`/api/${process.env.VERSION_API}/featured-events`,eventController.getFeaturedEvents) 
+routerEvent.get(`/api/${process.env.VERSION_API}/featured-events`,eventController.getFeaturedEvents)
+routerEvent.get(`/api/${process.env.VERSION_API}/avaliable-events`,eventController.getAvailableEvents) 
 
 module.exports = routerEvent

@@ -5,7 +5,7 @@ const eventSchema = new mongoose.Schema(
       name: { type: String, require: true },
       description: { type: String, require: true },
       category: { type: String, require: true },
-      days_published: { type: Date, require: true },
+      publication_day: { type: Date, require: true },
       date_init: {
         type: Date,
         require: true,

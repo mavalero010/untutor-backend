@@ -40,7 +40,7 @@ const getAllSubjects = async (req, res) => {
     }})
 
     res.json({results,totalPages,page:parseInt(page)})
-    
+
   } catch (error) {
     res.json({ success: false, msg: "Error en controlador" });
   }
@@ -65,7 +65,7 @@ const getAllSubjectsByID_Faculty = async (req, res) => {
     if (!validateInfo) {
       return res.json({
         success: false,
-        msg: "Usuario no existe o contraseña inválida",
+        msg: "Usuario no existe, token inválido",
       });
     }
 

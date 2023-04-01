@@ -7,6 +7,7 @@ const routerPhrase=require("./src/routes/phrase_route")
 const routerSubject=require("./src/routes/subject_route")
 const routerFaculty=require("./src/routes/faculty_route")
 const routerEvent=require("./src/routes/event_route")
+const routerHome = require("./src/routes/home_route")
 
 connectDB();
 
@@ -26,6 +27,7 @@ app.use(routerPhrase)
 app.use(routerSubject)
 app.use(routerFaculty)
 app.use(routerEvent)
+app.use(routerHome)
 
 
 app.listen(process.env.PORT, () => {
