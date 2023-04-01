@@ -1,5 +1,5 @@
 const userController = require("../controllers/user_controller")
-const Router = require("express");
+const Router = require("express")
 const dotenv = require("dotenv")
 dotenv.config()
 
