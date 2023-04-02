@@ -2,7 +2,9 @@ const Subject = require("../models/subject_model");
 const Event = require("../models/event_model");
 const User = require("../models/user_model");
 const Phrase = require("../models/phrase_model");
+const Source = require("../models/source_model")
 const { getTokenData, authTokenDecoded } = require("../config/jwt.config");
+const Fuse = require("fuse.js");
 
 const getHome = async (req, res) => {
   try {
@@ -83,7 +85,11 @@ const getHome = async (req, res) => {
         return Math.random() - 0.5;
       });
     }
-    res.json({ mantra: phrase.content, subjects, events:events.filter((d) => d.date_init > Date.now()) });
+    res.json({
+      mantra: phrase.content,
+      subjects,
+      events: events.filter((d) => d.date_init > Date.now()),
+    });
   } catch (error) {
     return res.json({
       success: false,
@@ -92,6 +98,89 @@ const getHome = async (req, res) => {
   }
 };
 
+const getBrowser = async (req, res) => {
+  try {
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({ message: "No se proporcionó un token" });
+    }
+
+    //Decodifico Token
+    const dataUserDecoded = getTokenData(token);
+    const mail = dataUserDecoded.data.email;
+    //Lo busco en BD
+    let user = (await User.findOne({ email: mail })) || null;
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataUserDecoded, user);
+
+    if (!validateInfo) {
+      return res.json({
+        success: false,
+        msg: "Usuario no existe o contraseña inválida",
+      });
+    }
+
+    //Verifica que el user sea de rol student
+    if (user.role !== "student") {
+      return res.json({
+        success: false,
+        msg: "Válido solo para rol student",
+      });
+    }
+
+    //Obtengo el filtro para saber en que base de datos buscar, sea User, Subject, Source, Event etc
+    const { filter } = req.query;
+    const { searchString } = req.body;
+    let searchResults = false;
+    let DB = false;
+    const options = {
+      includeScore: true,
+      keys: ["name"], 
+      threshold: 0.3,
+    };
+
+    //Busco en la base de datos según sea el filtro
+    if (filter === "tutor") {
+      DB = await User.find({ role: filter });
+      const fuse = new Fuse(DB, options);
+      searchResults = fuse.search(searchString);
+    }
+    if (filter === "subject") {
+      DB = await Subject.find();
+      const fuse = new Fuse(DB, options);
+      searchResults = fuse.search(searchString);
+    }
+    if (filter === "source") {
+      DB = await Source.find();
+      const fuse = new Fuse(DB, options);
+      searchResults = fuse.search(searchString);
+    }
+    if (filter === "event") {
+      DB = await Event.find();
+      const fuse = new Fuse(DB, options);
+      searchResults = fuse.search(searchString);
+    }
+
+    if (!searchResults) {
+     return res.json({
+        success: false,
+        msg: "No se encontró ningún resultado compatible",
+      });
+    }
+     res.json({ results: searchResults });
+    
+
+    
+  } catch (error) {
+    return res.json({
+      success: false,
+      msg: "Error obteniendo Browser",
+    });
+  }
+};
 module.exports = {
   getHome,
+  getBrowser,
 };

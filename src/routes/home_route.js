@@ -6,5 +6,6 @@ dotenv.config()
 const routerHome = Router()
 
 routerHome.get(`/api/${process.env.VERSION_API}/home`,homeController.getHome)
+routerHome.get(`/api/${process.env.VERSION_API}/browser`,homeController.getBrowser)
 
 module.exports = routerHome

@@ -91,7 +91,7 @@ const registerUser = async (req, res) => {
         ));
 
     } else {
-      res.json({ isOk: false, msj: "Contraseñas desiguales" });
+      res.json({ success: false, msj: "Contraseñas desiguales" });
     }
   } catch (error) {
     console.log(error);
