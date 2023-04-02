@@ -132,7 +132,7 @@ const getBrowser = async (req, res) => {
 
     //Obtengo el filtro para saber en que base de datos buscar, sea User, Subject, Source, Event etc
     const { filter,page, limit} = req.query;
-    const { searchString } = req.body;
+    const { search_string } = req.body;
     let searchResults = false;
     let DB = false;
     const options = {
@@ -145,22 +145,22 @@ const getBrowser = async (req, res) => {
     if (filter === "tutor") {
       DB = await User.find({ role: filter });
       const fuse = new Fuse(DB, options);
-      searchResults = fuse.search(searchString);
+      searchResults = fuse.search(search_string);
     }
     if (filter === "subject") {
       DB = await Subject.find();
       const fuse = new Fuse(DB, options);
-      searchResults = fuse.search(searchString);
+      searchResults = fuse.search(search_string);
     }
     if (filter === "source") {
       DB = await Source.find();
       const fuse = new Fuse(DB, options);
-      searchResults = fuse.search(searchString);
+      searchResults = fuse.search(search_string);
     }
     if (filter === "event") {
       DB = await Event.find();
       const fuse = new Fuse(DB, options);
-      searchResults = fuse.search(searchString);
+      searchResults = fuse.search(search_string);
     }
 
     if (!searchResults) {
