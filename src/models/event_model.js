@@ -1,11 +1,11 @@
 const mongoose = require("mongoose")
-
+const mongoosePaginate = require('mongoose-paginate-v2')
 const eventSchema = new mongoose.Schema(
     {
       name: { type: String, require: true },
       description: { type: String, require: true },
       category: { type: String, require: true },
-      days_published: { type: Date, require: true },
+      publication_day: { type: Date, require: true },
       date_init: {
         type: Date,
         require: true,
@@ -17,4 +17,4 @@ const eventSchema = new mongoose.Schema(
     }
   )
 
-module.exports = mongoose.model('Event', eventSchema)
+module.exports = mongoose.model('Event', eventSchema.plugin(mongoosePaginate))

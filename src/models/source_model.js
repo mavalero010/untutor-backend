@@ -6,12 +6,12 @@ const sourceSchema = new mongoose.Schema(
     description: { type: String, require: true },
     category: { type: String, require: true },
     url_file: { type: String, require: true },
-    ID_subject: {
+    idsubject: {
       type: mongoose.Schema.ObjectId,
       ref: 'Subject',
       require: true,
     },
-    ID_comment_list: [
+    idcomment_list: [
       {
         type: mongoose.Schema.ObjectId,
         ref: 'Comment',

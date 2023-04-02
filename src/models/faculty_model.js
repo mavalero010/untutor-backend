@@ -1,14 +1,9 @@
 const mongoose = require("mongoose")
 
-const eventSchema = new mongoose.Schema(
+const facultySchema = new mongoose.Schema(
     {
       name: { type: String, require: true, unique:true },
-      description: { type: String, require: true },
-      ID_subject_list:[{
-        type: mongoose.Schema.ObjectId,
-        ref: 'Subject',
-        require: true,
-      }]
+      description: { type: String, require: true }
       
     },
     {
@@ -16,4 +11,4 @@ const eventSchema = new mongoose.Schema(
     }
   )
 
-module.exports = mongoose.model('Event', eventSchema)
+module.exports = mongoose.model('Faculty', facultySchema)

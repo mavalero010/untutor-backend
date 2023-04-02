@@ -4,21 +4,21 @@ const tutorySchema = new mongoose.Schema(
   {
     name: { type: String, require: true },
     description: { type: String, require: true },
-    ID_tutor: {
+    idtutor: {
       type: {
         type: mongoose.Schema.ObjectId,
         ref: "User",
       },
       require: true,
     }, //Role = Tutor
-    ID_student_list: [
+    idstudent_list: [
       {
         type: mongoose.Schema.ObjectId,
         ref: "User",
       },
     ], //Role=Estudiante
 
-    ID_subject: {
+    idsubject: {
       type: mongoose.Schema.ObjectId,
       ref: "Subject",
       require: true,
