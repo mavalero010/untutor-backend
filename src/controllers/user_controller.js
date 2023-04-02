@@ -1,6 +1,6 @@
-const bcrypt = require("bcrypt")
+const bcrypt = require("bcrypt");
 
-const User = require("../models/user_model")
+const User = require("../models/user_model");
 const UnverifiedUser = require("../models/unverified_user_model");
 const {
   getToken,
@@ -21,7 +21,6 @@ const registerUser = async (req, res) => {
       iduniversity,
       email,
       password,
-      password_confirmation,
       gender,
       birthday,
       biography,
@@ -33,66 +32,66 @@ const registerUser = async (req, res) => {
       phone,
     } = req.body;
 
-   
-    //Valida si contraseña es la misma
-    if (password == password_confirmation) {
-      //Encripta clave
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
+    //Encripta clave
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-      // Verificar que el usuario no exista
-      let user = (await User.findOne({ email })) || null;
-      let unverifiedUser = (await UnverifiedUser.findOne({ email })) || null;
-      if (user !== null) {
-        return res.json({
-          success: false,
-          msg: "Usuario ya existe",
-        });
-      }
-
-      if (unverifiedUser !== null) {
-        return res.json({
-          success: false,
-          msg: "Verifica este usuario",
-        });
-      }
-
-      // Crear un nuevo usuario
-      password = hashedPassword;
-      unv_user = new UnverifiedUser({
-        name,
-        iduniversity,
-        email,
-        password,
-        gender,
-        birthday,
-        biography,
-        role,
-        idfaculty,
-        city_of_birth,
-        perfil_photo,
-        idfavorite_subjects,
-        phone,
+    // Verificar que el usuario no exista
+    let user = (await User.findOne({ email })) || null;
+    let unverifiedUser = (await UnverifiedUser.findOne({ email })) || null;
+    if (user !== null) {
+      return res.json({
+        success: false,
+        msg: "Usuario ya existe",
       });
-
-      // Generar token
-      const token = getToken({ email, password });
-
-      // Obtener un template
-      const template = getTemplate(name, token);
-
-      // Enviar el email
-      await sendEmail(email, "Correo de confirmación cuenta UNTutor", template);
-      await unv_user.save().then((data) => res.json(
-        {
-          data,
-          success: true,
-          msg: "Usuario registrado, verificar en cuenta de correo",
-        }
-        ));
-
-    } else {
-      res.json({ success: false, msj: "Contraseñas desiguales" });
     }
+
+    if (unverifiedUser !== null) {
+      return res.json({
+        success: false,
+        msg: "Verifica este usuario",
+      });
+    }
+
+    if (role !== "student") {
+      return res.json({
+        success: false,
+        msg: "Válido solo para cuentas de rol student",
+      });
+    }
+
+    // Crear un nuevo usuario
+    password = hashedPassword;
+    unv_user = new UnverifiedUser({
+      name,
+      iduniversity,
+      email,
+      password,
+      gender,
+      birthday,
+      biography,
+      role,
+      idfaculty,
+      city_of_birth,
+      perfil_photo,
+      idfavorite_subjects,
+      phone,
+    });
+
+    // Generar token
+    const token = getToken({ email, password });
+
+    // Obtener un template
+    const template = getTemplate(name, token);
+
+    // Enviar el email
+    await sendEmail(email, "Correo de confirmación cuenta UNTutor", template);
+    await unv_user.save().then((data) =>
+      res.json({
+        data,
+        success: true,
+        msg: "Usuario registrado, verificar en cuenta de correo",
+      })
+    );
   } catch (error) {
     console.log(error);
     return res.json({
@@ -245,10 +244,10 @@ const home = async (req, res) => {
     }
 
     //Decodifico Token
-    const dataUserDecoded = getTokenData(token)
+    const dataUserDecoded = getTokenData(token);
 
     //Busco usuario mediante Email en el DB
-    const mail = dataUserDecoded.data.email
+    const mail = dataUserDecoded.data.email;
     let user = (await User.findOne({ email: mail })) || null;
 
     if (user === null) {
