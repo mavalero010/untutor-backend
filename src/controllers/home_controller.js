@@ -131,7 +131,7 @@ const getBrowser = async (req, res) => {
     }
 
     //Obtengo el filtro para saber en que base de datos buscar, sea User, Subject, Source, Event etc
-    const { filter } = req.query;
+    const { filter,page, limit} = req.query;
     const { searchString } = req.body;
     let searchResults = false;
     let DB = false;
@@ -169,7 +169,13 @@ const getBrowser = async (req, res) => {
         msg: "No se encontró ningún resultado compatible",
       });
     }
-     res.json({ results: searchResults });
+
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+
+     res.json({ results: searchResults.sort(function(a, b) {
+        return b.score - a.score;
+    }).slice(startIndex,endIndex) });
     
 
     
