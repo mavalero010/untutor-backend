@@ -1,5 +1,4 @@
-
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
@@ -7,7 +6,7 @@ const userSchema = new mongoose.Schema(
     iduniversity: {
       type: mongoose.Schema.ObjectId,
 
-      ref: 'University',
+      ref: "University",
 
       require: true,
     },
@@ -21,8 +20,11 @@ const userSchema = new mongoose.Schema(
     active: { type: Boolean, require: true, default: false },
     role: { type: String, require: true },
 
-    idfaculty: { type: mongoose.Schema.ObjectId,
-      ref: 'Faculty', require: true },
+    idfaculty: {
+      type: mongoose.Schema.ObjectId,
+      ref: "Faculty",
+      require: true,
+    },
 
     city_of_birth: { type: String },
     perfil_photo: { type: String }, //TODO: Ajustar tipo de dato correcto
@@ -30,8 +32,7 @@ const userSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.ObjectId,
 
-        ref: 'Subject',
-
+        ref: "Subject",
       },
     ],
     phone: { type: String },
@@ -39,6 +40,5 @@ const userSchema = new mongoose.Schema(
   {
     versionKey: false,
   }
-)
-module.exports = mongoose.model('User', userSchema);
-
+);
+module.exports = mongoose.model("User", userSchema);

@@ -8,7 +8,7 @@ const routerSubject=require("./src/routes/subject_route")
 const routerFaculty=require("./src/routes/faculty_route")
 const routerEvent=require("./src/routes/event_route")
 const routerHome = require("./src/routes/home_route")
-
+const routerAdmin = require("./src/routes/admin_route")
 connectDB();
 
 const app = express();
@@ -28,7 +28,7 @@ app.use(routerSubject)
 app.use(routerFaculty)
 app.use(routerEvent)
 app.use(routerHome)
-
+app.use(routerAdmin)
 
 app.listen(process.env.PORT, () => {
   console.log(`Example app listening on port ${process.env.PORT}`);
