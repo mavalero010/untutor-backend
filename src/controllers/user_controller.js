@@ -351,6 +351,14 @@ const addIdCommentAtList = async (req, res) => {
     res.json({ succes: false, msg: "Error en controlador addIdCommentAtList" });
   }
 };
+
+const deleteCommentById = async( req, res)=>{
+  try {
+    
+  } catch (error) {
+    res.json({ succes: false, msg: "Error en controlador deleteCommentById" });
+  }
+}
 //TODO: CREAR UN MÉTODO PARA BORRAR USUARIO DE BASE DE DATOS EN CASO DE NO CONFIRMARSE LA CUENTA
 module.exports = {
   registerUser,
@@ -358,4 +366,5 @@ module.exports = {
   login,
   home,
   addIdCommentAtList,
+  deleteCommentById
 };
