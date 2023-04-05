@@ -2,6 +2,7 @@ const Subject = require("../models/subject_model");
 const Source = require("../models/source_model");
 const User = require("../models/user_model");
 const Admin = require("../models/admin_model");
+const Comment = require("../models/comment_model");
 const { getTokenData, authTokenDecoded } = require("../config/jwt.config");
 
 const getAllSubjects = async (req, res) => {
@@ -346,11 +347,14 @@ const addIdSourceAtList = async (req, res) => {
     res.json({ succes: false, msg: "Error en controlador addIdsourceAtList" });
   }
 };
+
+
 module.exports = {
   getAllSubjects,
   getAllSubjectsByID_Faculty,
   createSubject,
   updateSubject,
   addIdTutorAtList,
-  addIdSourceAtList
+  addIdSourceAtList,
+  
 };

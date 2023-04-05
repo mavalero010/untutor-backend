@@ -2,9 +2,15 @@ const bcrypt = require("bcrypt");
 
 const User = require("../models/user_model");
 const UnverifiedUser = require("../models/unverified_user_model");
+const Comment = require("../models/comment_model");
+const Story = require("../models/story_model");
+const Subject = require("../models/subject_model");
+const Source = require("../models/source_model");
+
 const {
   getToken,
   getTokenData,
+  authTokenDecoded,
   getUnexpiredToken,
 } = require("../config/jwt.config");
 const { getTemplate, sendEmail } = require("../config/mail.config");
@@ -275,11 +281,81 @@ const home = async (req, res) => {
     res.status(404).json({ msg: "Token no encontrado" });
   }
 };
+const addIdCommentAtList = async (req, res) => {
+  try {
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "No se proporcionó un token" });
+    }
 
+    //Decodifico Token
+    const dataUserDecoded = getTokenData(token);
+    const mail = dataUserDecoded.data.email;
+    //Lo busco en BD
+    let user = (await User.findOne({ email: mail })) || null;
+
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataUserDecoded, user);
+
+    if (!validateInfo) {
+      return res.json({
+        success: false,
+        msg: "Usuario no existe o contraseña inválida",
+      });
+    }
+
+    //Verifica que el user sea de rol student
+    if (user.role !== "student") {
+      return res.json({
+        success: false,
+        msg: "Válido solo para rol student",
+      });
+    }
+
+    //Obtengo el target para saber en que base de datos buscar, sea Story, Source, Subject
+    const { target } = req.query;
+    const { comment, idauthor, idtarget } = req.body;
+    const com = new Comment({comment, idauthor, idtarget})
+    
+    if (target === "story") {
+      const story = await Story.findOne({ _id: idtarget }) || null
+      if(story === null){
+        return res.json({success:false,msg:"Story no existe"})
+      }
+      story.idcomment_list.push(com._id)
+      await story.save()
+    }
+    
+    if (target === "source") {
+      const source = await Source.findOne({ _id: idtarget }) || null
+      if(source === null){
+        return res.json({success:false,msg:"Recurso no existe"})
+      }
+      source.idcomment_list.push(com._id)
+      await source.save()
+    }
+
+    if (target === "subject") {
+      const subject = await Subject.findOne({ _id: idtarget }) || null
+      if(subject === null){
+        return res.json({success:false,msg:"Materia no existe"})
+      }
+      subject.idcomment_list.push(com._id)
+      await subject.save()
+    }
+    await com.save()
+    res.json(com);
+  } catch (error) {
+    res.json({ succes: false, msg: "Error en controlador addIdCommentAtList" });
+  }
+};
 //TODO: CREAR UN MÉTODO PARA BORRAR USUARIO DE BASE DE DATOS EN CASO DE NO CONFIRMARSE LA CUENTA
 module.exports = {
   registerUser,
   confirm,
   login,
   home,
+  addIdCommentAtList,
 };
