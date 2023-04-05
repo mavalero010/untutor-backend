@@ -132,7 +132,7 @@ const confirm = async (req, res) => {
     if (unv_user === null) {
       return res.json({
         success: false,
-        msg: "Usuario no existe",
+        msg: "Correo de cuenta no está en lista de espera por verificar",
       });
     }
 
@@ -202,7 +202,7 @@ const login = async (req, res) => {
     }
 
     //Verificar que los datos son válidos
-    const compare = bcrypt.compare(password, user.password);
+    const compare = await bcrypt.compare(password, user.password);
 
     if (!compare) {
       return res.status(401).json({
@@ -229,7 +229,7 @@ const login = async (req, res) => {
   } catch (error) {
     //TODO: Averiguar que status es el mas indicado
     res.status(500).json({
-      msg: error,
+      msg: "Error iniciando sesión",
     });
   }
 };
@@ -258,7 +258,7 @@ const home = async (req, res) => {
     }
 
     //Verificar que los datos son válidos
-    const compare = bcrypt.compare(
+    const compare = await bcrypt.compare(
       dataUserDecoded.data.password,
       user.password
     );
