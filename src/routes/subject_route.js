@@ -10,6 +10,7 @@ routerSubject.get(`/api/${process.env.VERSION_API}/subjectsbyidfaculty`,subjectC
 routerSubject.post(`/api/${process.env.VERSION_API}/admin/subject`,subjectController.createSubject) 
 routerSubject.put(`/api/${process.env.VERSION_API}/admin/subject`,subjectController.updateSubject) 
 routerSubject.put(`/api/${process.env.VERSION_API}/admin/subject/addtutor`,subjectController.addIdTutorAtList) 
-routerSubject.put(`/api/${process.env.VERSION_API}/admin/subject/addsource`,subjectController.addIdSourceAtList) 
+routerSubject.put(`/api/${process.env.VERSION_API}/admin/subject/addsource`,subjectController.addIdSourceAtList)
+
 
 module.exports = routerSubject

@@ -2,7 +2,6 @@ const mongoose = require("mongoose")
 
 const commentSchema = new mongoose.Schema(
     {
-      name: { type: String, require: true },
       comment: { type: String, require: true },
       date:{type:Date, default: Date.now},
       
@@ -11,7 +10,8 @@ const commentSchema = new mongoose.Schema(
           type: mongoose.Schema.ObjectId,
           ref: 'User',
         },
-        likes:{type:Number,default:0}
+        likes:{type:Number,default:0},
+        idtarget:{type: mongoose.Schema.ObjectId, require:true}
     },
     {
       versionKey: false,
