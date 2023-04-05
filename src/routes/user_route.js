@@ -9,8 +9,8 @@ routerUser.post(`/api/${process.env.VERSION_API}/user/register`, userController.
 routerUser.get(`/api/${process.env.VERSION_API}/user/confirm/:token`, userController.confirm)
 routerUser.post(`/api/${process.env.VERSION_API}/user/login`, userController.login)
 routerUser.get(`/api/${process.env.VERSION_API}/user/home`, userController.home)
-routerUser.post(`/api/${process.env.VERSION_API}/comment/addcomment`,userController.addIdCommentAtList)
-routerUser.delete(`/api/${process.env.VERSION_API}/comment/deletecomment`,userController.deleteCommentById) 
+routerUser.post(`/api/${process.env.VERSION_API}/comment`,userController.addIdCommentAtList)
+routerUser.delete(`/api/${process.env.VERSION_API}/comment`,userController.deleteCommentById) 
 //TODO:Crear ruta de Logout donde el token expire forzosamente
 
 module.exports = routerUser;
