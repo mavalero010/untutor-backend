@@ -317,48 +317,139 @@ const addIdCommentAtList = async (req, res) => {
     //Obtengo el target para saber en que base de datos buscar, sea Story, Source, Subject
     const { target } = req.query;
     const { comment, idauthor, idtarget } = req.body;
-    const com = new Comment({comment, idauthor, idtarget})
-    
+    const com = new Comment({ comment, idauthor, idtarget });
+
     if (target === "story") {
-      const story = await Story.findOne({ _id: idtarget }) || null
-      if(story === null){
-        return res.json({success:false,msg:"Story no existe"})
+      const story = (await Story.findOne({ _id: idtarget })) || null;
+      if (story === null) {
+        return res.json({ success: false, msg: "Story no existe" });
       }
-      story.idcomment_list.push(com._id)
-      await story.save()
+      story.idcomment_list.push(com._id);
+      await story.save();
     }
-    
+
     if (target === "source") {
-      const source = await Source.findOne({ _id: idtarget }) || null
-      if(source === null){
-        return res.json({success:false,msg:"Recurso no existe"})
+      const source = (await Source.findOne({ _id: idtarget })) || null;
+      if (source === null) {
+        return res.json({ success: false, msg: "Recurso no existe" });
       }
-      source.idcomment_list.push(com._id)
-      await source.save()
+      source.idcomment_list.push(com._id);
+      await source.save();
     }
 
     if (target === "subject") {
-      const subject = await Subject.findOne({ _id: idtarget }) || null
-      if(subject === null){
-        return res.json({success:false,msg:"Materia no existe"})
+      const subject = (await Subject.findOne({ _id: idtarget })) || null;
+      if (subject === null) {
+        return res.json({ success: false, msg: "Materia no existe" });
       }
-      subject.idcomment_list.push(com._id)
-      await subject.save()
+
+      subject.idcomment_list.push(com._id);
+      await subject.save();
     }
-    await com.save()
+    await com.save();
     res.json(com);
   } catch (error) {
     res.json({ succes: false, msg: "Error en controlador addIdCommentAtList" });
   }
 };
 
-const deleteCommentById = async( req, res)=>{
+const deleteCommentById = async (req, res) => {
   try {
-    
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "No se proporcionó un token" });
+    }
+
+    //Decodifico Token
+    const dataUserDecoded = getTokenData(token);
+    const mail = dataUserDecoded.data.email;
+    //Lo busco en BD
+    let user = (await User.findOne({ email: mail })) || null;
+
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataUserDecoded, user);
+
+    if (!validateInfo) {
+      return res.json({
+        success: false,
+        msg: "Usuario no existe o contraseña inválida",
+      });
+    }
+
+    //Verifica que el user sea de rol student
+    if (user.role !== "student") {
+      return res.json({
+        success: false,
+        msg: "Válido solo para rol student",
+      });
+    }
+    //Obtengo el target y el idcomment para saber en que base de datos buscar y eliminar, sea Story, Source, Subject
+    const { target, idcomment, idtarget } = req.query;
+    let validateTarget=false
+    let result=[]
+
+    if (target === "subject") {
+      
+      await Subject.updateOne(
+        { _id: idtarget },
+        { $pull: { idcomment_list: idcomment } }
+      ).then(data=> result.push(data)).catch((err) => {
+        return res.json({
+          success: false,
+          msg: "Error eliminando comentario de lista en Subject",
+        });
+      });
+      await Comment.deleteOne({ _id: idcomment }).then(data=> result.push(data)).catch((err) => {
+        return res.json({ success: false, msg: "Error eliminando comentario" });
+      });
+      validateTarget=true
+    }
+    if (target === "source") {
+      
+      await Source.updateOne(
+        { _id: idtarget },
+        { $pull: { idcomment_list: idcomment } }
+      ).then(data=> result.push(data)).catch((err) => {
+        return res.json({
+          success: false,
+          msg: "Error eliminando comentario de lista en Source",
+        });
+      });
+      await Comment.deleteOne({ _id: idcomment }).then(data=> result.push(data)).catch((err) => {
+        return res.json({ success: false, msg: "Error eliminando comentario" });
+      });
+      validateTarget=true
+    }
+
+    if (target === "story") {
+      
+      await Story.updateOne(
+        { _id: idtarget },
+        { $pull: { idcomment_list: idcomment } }
+      ).then(data=> result.push(data)).catch((err) => {
+        return res.json({
+          success: false,
+          msg: "Error eliminando comentario de lista en Source",
+        });
+      });
+      await Comment.deleteOne({ _id: idcomment }).then(data=> result.push(data)).catch((err) => {
+        return res.json({ success: false, msg: "Error eliminando comentario" });
+      });
+      validateTarget=true
+    }
+    if(!validateTarget){
+    return res.json({ success: true, msg: "introduzca un target correcto" });
+  }
+
+  res.json(result)
+  
+
   } catch (error) {
     res.json({ succes: false, msg: "Error en controlador deleteCommentById" });
   }
-}
+};
 //TODO: CREAR UN MÉTODO PARA BORRAR USUARIO DE BASE DE DATOS EN CASO DE NO CONFIRMARSE LA CUENTA
 module.exports = {
   registerUser,
@@ -366,5 +457,5 @@ module.exports = {
   login,
   home,
   addIdCommentAtList,
-  deleteCommentById
+  deleteCommentById,
 };
