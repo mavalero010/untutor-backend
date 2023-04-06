@@ -439,6 +439,30 @@ const deleteCommentById = async (req, res) => {
       });
       validateTarget=true
     }
+    
+/*
+    await Comment.pre('remove', async function (next) {
+     
+      try {
+        await Story.updateMany(
+          { idcomment_list: { $in: [idcomment] } },
+          { $pull: { idcomment_list: idcomment } }
+        );
+        await Source.updateMany(
+          { idcomment_list: { $in: [idcomment] } },
+          { $pull: { idcomment_list: idcomment } }
+        );
+        await Subject.updateMany(
+          { idcomment_list: { $in: [idcomment] } },
+          { $pull: { idcomment_list: idcomment } }
+        );
+        next();
+      } catch (error) {
+        console.log(error)
+        next(error);
+      }
+    });
+*/
     if(!validateTarget){
     return res.json({ success: true, msg: "introduzca un target correcto" });
   }
@@ -447,6 +471,7 @@ const deleteCommentById = async (req, res) => {
   
 
   } catch (error) {
+    console.log(error)
     res.json({ succes: false, msg: "Error en controlador deleteCommentById" });
   }
 };

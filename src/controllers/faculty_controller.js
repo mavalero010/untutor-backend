@@ -25,17 +25,23 @@ const getFaculty = async (req, res) => {
       });
     }
 
-    const { idfaculty } = req.query;
-    const faculty = await Faculty.findOne({ _id: idfaculty }) || null;
-
+    let { idfaculty,page, limit } = req.query;
+    if(idfaculty===undefined){
+      let iduniversity=user.iduniversity
+      const f = await Faculty.find({iduniversity})
+      return res.json(f)
+    }
+    const faculty = await Faculty.paginate({ _id: idfaculty , iduniversity:user.iduniversity}, { page, limit }) || null;
+    
     if (faculty === null) {
       return res.json({
         success: false,
-        msg: "Usuario no existe, idfaculty inválido",
+        msg: "idfaculty inválido",
       });
     }
+    const {docs,totalPages} = faculty 
 
-    res.json(faculty);
+    res.json({ results:docs, totalPages, page: parseInt(page) });
   } catch (error) {
 
     res.json({ succes: false, msg: "error en controlador"});

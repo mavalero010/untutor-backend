@@ -1,5 +1,5 @@
 const mongoose = require("mongoose")
-
+const mongoosePaginate = require('mongoose-paginate-v2')
 const facultySchema = new mongoose.Schema(
     {
       name: { type: String, require: true, unique:true },
@@ -16,4 +16,4 @@ const facultySchema = new mongoose.Schema(
     }
   )
 
-module.exports = mongoose.model('Faculty', facultySchema)
+module.exports = mongoose.model('Faculty', facultySchema.plugin(mongoosePaginate))
