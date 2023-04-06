@@ -28,20 +28,20 @@ const getFaculty = async (req, res) => {
     let { idfaculty,page, limit } = req.query;
     if(idfaculty===undefined){
       let iduniversity=user.iduniversity
-      const f = await Faculty.find({iduniversity})
-      return res.json(f)
+      const f = await Faculty.paginate({iduniversity}, { page, limit })
+      const {docs,totalPages} = f 
+      return res.json({ results:docs, totalPages, page: parseInt(page) });
+      
     }
-    const faculty = await Faculty.paginate({ _id: idfaculty , iduniversity:user.iduniversity}, { page, limit }) || null;
+    const faculty = await Faculty.findOne({ _id: idfaculty , iduniversity:user.iduniversity}) || null;
     
     if (faculty === null) {
       return res.json({
         success: false,
         msg: "idfaculty inválido",
       });
-    }
-    const {docs,totalPages} = faculty 
-
-    res.json({ results:docs, totalPages, page: parseInt(page) });
+  }
+  res.json(faculty);
   } catch (error) {
 
     res.json({ succes: false, msg: "error en controlador"});
