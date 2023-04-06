@@ -5,6 +5,6 @@ dotenv.config()
 
 const routerFaculty = Router()
 
-routerFaculty.get(`/api/${process.env.VERSION_API}/faculty`,facultyController.getFaculty) 
+routerFaculty.get(`/api/${process.env.VERSION_API}/faculties`,facultyController.getFaculty) 
 
 module.exports = routerFaculty
