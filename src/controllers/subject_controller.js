@@ -2,6 +2,7 @@ const Subject = require("../models/subject_model");
 const Source = require("../models/source_model");
 const User = require("../models/user_model");
 const Admin = require("../models/admin_model");
+const Faculty = require("../models/faculty_model");
 const Comment = require("../models/comment_model");
 const { getTokenData, authTokenDecoded } = require("../config/jwt.config");
 
@@ -32,19 +33,9 @@ const getAllSubjects = async (req, res) => {
     //Recibo params
     const { page, limit } = req.query;
     const myData = await Subject.paginate({}, { page, limit });
-
     const { docs, totalPages } = myData;
 
-    const results = docs.map((d) => {
-      return {
-        _id: d._id,
-        name: d.name,
-        url_background_image: d.url_background_image,
-        tutors: d.idtutor_list.length,
-      };
-    });
-
-    res.json({ results, totalPages, page: parseInt(page) });
+    res.json({ results:docs, totalPages, page: parseInt(page) });
   } catch (error) {
     res.json({ success: false, msg: "Error en controlador" });
   }
