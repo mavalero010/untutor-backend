@@ -65,7 +65,8 @@ const getAllSubjectsByID_Faculty = async (req, res) => {
     }
 
     //Recibo params
-    const { page, limit, idfaculty } = req.query;
+    const { page, limit } = req.query;
+    const {idfaculty}=req.params;
     const myData = await Subject.paginate({ idfaculty }, { page, limit });
 
     const { docs, totalPages } = myData;
@@ -369,6 +370,43 @@ try {
 }
 }
 
+const getSubjectById=async(req,res)=>{
+  try {
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({ message: "No se proporcionó un token" });
+    }
+
+    //Decodifico Token
+    const dataUserDecoded = getTokenData(token);
+    const mail = dataUserDecoded.data.email;
+    //Lo busco en BD
+    let user = (await User.findOne({ email: mail })) || null;
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataUserDecoded, user);
+
+    if (!validateInfo) {
+      return res.status(401).json({
+        success: false,
+        msg: "Usuario no existe, token inválido",
+      });
+    }
+
+    const {idsubject}=req.query;
+
+    const subject =await Subject.findOne({_id:idsubject})||null
+
+    if(subject===null){
+      return res.status(404).json({msg:"Subject no existe"})
+    }
+
+    res.json(subject)
+  } catch (error) {
+    res.status(500).json({ succes: false, msg: "Error en controlador uploadBackgroundImageSubject" });
+  }
+}
 module.exports = {
   getAllSubjects,
   getAllSubjectsByID_Faculty,
@@ -376,5 +414,6 @@ module.exports = {
   updateSubject,
   addIdTutorAtList,
   addIdSourceAtList,
-  uploadBackgroundImageSubject
+  uploadBackgroundImageSubject,
+  getSubjectById
 };
