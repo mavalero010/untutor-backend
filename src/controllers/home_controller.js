@@ -24,7 +24,7 @@ const getHome = async (req, res) => {
     const validateInfo = authTokenDecoded(dataUserDecoded, user);
 
     if (!validateInfo) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Usuario no existe o contraseña inválida",
       });
@@ -32,7 +32,7 @@ const getHome = async (req, res) => {
 
     //Verifica que el user sea de rol student
     if (user.role !== "student") {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
@@ -85,13 +85,13 @@ const getHome = async (req, res) => {
         return Math.random() - 0.5;
       });
     }
-    res.json({
+    res.status(200).json({
       mantra: phrase.content,
       subjects,
       events: events.filter((d) => d.date_init > Date.now()),
     });
   } catch (error) {
-    return res.json({
+    return res.status(500).json({
       success: false,
       msg: "Error obteniendo Home",
     });
@@ -116,7 +116,7 @@ const getBrowser = async (req, res) => {
     const validateInfo = authTokenDecoded(dataUserDecoded, user);
 
     if (!validateInfo) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Usuario no existe o contraseña inválida",
       });
@@ -124,7 +124,7 @@ const getBrowser = async (req, res) => {
 
     //Verifica que el user sea de rol student
     if (user.role !== "student") {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
@@ -164,7 +164,7 @@ const getBrowser = async (req, res) => {
     }
 
     if (!searchResults) {
-     return res.json({
+     return res.status(200).json({
         success: false,
         msg: "No se encontró ningún resultado compatible",
       });
@@ -173,14 +173,14 @@ const getBrowser = async (req, res) => {
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
 
-     res.json({ results: searchResults.sort(function(a, b) {
+     res.status(200).json({ results: searchResults.sort(function(a, b) {
         return b.score - a.score;
     }).slice(startIndex,endIndex) });
     
 
     
   } catch (error) {
-    return res.json({
+    return res.status(500).json({
       success: false,
       msg: "Error obteniendo Browser",
     });
