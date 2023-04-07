@@ -6,6 +6,7 @@ const Comment = require("../models/comment_model");
 const Story = require("../models/story_model");
 const Subject = require("../models/subject_model");
 const Source = require("../models/source_model");
+const multer = require('multer')
 
 const {
   getToken,
@@ -475,6 +476,50 @@ const deleteCommentById = async (req, res) => {
     res.status(500).json({ succes: false, msg: "Error en controlador deleteCommentById" });
   }
 };
+
+const uploadProfilePhoto=async (req,res)=>{
+  try {
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "No se proporcionó un token" });
+    }
+
+    //Decodifico Token
+    const dataUserDecoded = getTokenData(token);
+    const mail = dataUserDecoded.data.email;
+    //Lo busco en BD
+    let user = (await User.findOne({ email: mail })) || null;
+
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataUserDecoded, user);
+
+    if (!validateInfo) {
+      return res.status(401).json({
+        success: false,
+        msg: "Usuario no existe o contraseña inválida",
+      });
+    }
+
+    //Verifica que el user sea de rol student
+    if (user.role !== "student") {
+      return res.status(401).json({
+        success: false,
+        msg: "Válido solo para rol student",
+      });
+    }
+
+    const storage = multer.memoryStorage()
+    const upload = multer({ storage: storage })
+
+    upload.single('image')
+    
+    res.json(user)
+  } catch (error) {
+    res.status(500).json({ succes: false, msg: "Error en controlador uploadProfilePhoto" });
+  }
+}
 //TODO: CREAR UN MÉTODO PARA BORRAR USUARIO DE BASE DE DATOS EN CASO DE NO CONFIRMARSE LA CUENTA
 module.exports = {
   registerUser,
@@ -483,4 +528,5 @@ module.exports = {
   home,
   addIdCommentAtList,
   deleteCommentById,
+  uploadProfilePhoto
 };
