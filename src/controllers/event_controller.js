@@ -20,7 +20,7 @@ const getFeaturedEvents = async (req, res) => {
     const validateInfo = authTokenDecoded(dataUserDecoded, user);
 
     if (!validateInfo) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Usuario no existe o contraseña inválida",
       });
@@ -42,9 +42,9 @@ const getFeaturedEvents = async (req, res) => {
       };
     });
 
-    res.json({ results, totalPages, page: parseInt(page) });
+    res.status(200).json({ results, totalPages, page: parseInt(page) });
   } catch (error) {
-    res.json({ success: false, msg: "Error en controlador" });
+    res.status(500).json({ success: false, msg: "Error en controlador" });
   }
 };
 
@@ -66,7 +66,7 @@ const getAvailableEvents = async (req, res) => {
     const validateInfo = authTokenDecoded(dataUserDecoded, user);
 
     if (!validateInfo) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Usuario no existe o contraseña inválida",
       });
@@ -89,9 +89,9 @@ const getAvailableEvents = async (req, res) => {
         };
       })
       .filter((d) => d.date_init > Date.now()); //Retorna los registros donde la fecha de inicio sea menor que la actual
-    res.json({ results, totalPages, page: parseInt(page) });
+    res.status(200).json({ results, totalPages, page: parseInt(page) });
   } catch (error) {
-    res.json({ success: false, msg: "Error en controlador" });
+    res.status(500).json({ success: false, msg: "Error en controlador" });
   }
 };
 

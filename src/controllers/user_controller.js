@@ -45,21 +45,21 @@ const registerUser = async (req, res) => {
     let user = (await User.findOne({ email })) || null;
     let unverifiedUser = (await UnverifiedUser.findOne({ email })) || null;
     if (user !== null) {
-      return res.json({
+      return res.status(409).json({
         success: false,
         msg: "Usuario ya existe",
       });
     }
 
     if (unverifiedUser !== null) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Verifica este usuario",
       });
     }
 
     if (role !== "student") {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Válido solo para cuentas de rol student",
       });
@@ -92,7 +92,7 @@ const registerUser = async (req, res) => {
     // Enviar el email
     await sendEmail(email, "Correo de confirmación cuenta UNTutor", template);
     await unv_user.save().then((data) =>
-      res.json({
+      res.status(200).json({
         data,
         success: true,
         msg: "Usuario registrado, verificar en cuenta de correo",
@@ -100,7 +100,7 @@ const registerUser = async (req, res) => {
     );
   } catch (error) {
     console.log(error);
-    return res.json({
+    return res.status(500).json({
       success: false,
       msg: "Error al registrar usuario",
     });
@@ -116,7 +116,7 @@ const confirm = async (req, res) => {
     const data = getTokenData(token);
 
     if (data === null) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Error al obtener data o token de confirmación expirado",
       });
@@ -126,7 +126,7 @@ const confirm = async (req, res) => {
     // Verificar no existencia del usuario
     const u = (await User.findOne({ email })) || null;
     if (u !== null) {
-      return res.json({
+      return res.status(409).json({
         success: false,
         msg: "Usuario ya existe",
       });
@@ -136,7 +136,7 @@ const confirm = async (req, res) => {
     const unv_user = (await UnverifiedUser.findOne({ email })) || null;
 
     if (unv_user === null) {
-      return res.json({
+      return res.status(404).json({
         success: false,
         msg: "Correo de cuenta no está en lista de espera por verificar",
       });
@@ -228,7 +228,7 @@ const login = async (req, res) => {
     const token = getUnexpiredToken({ email, password });
 
     //TODO: Buscar campos de seguridad extras para añadir al login, sea mensajes por SMS o autenticacion por huella digital
-    return res.json({
+    return res.status(200).json({
       token,
       user,
     });
@@ -257,7 +257,7 @@ const home = async (req, res) => {
     let user = (await User.findOne({ email: mail })) || null;
 
     if (user === null) {
-      return res.json({
+      return res.status(404).json({
         success: false,
         msg: "Usuario no existe",
       });
@@ -270,13 +270,13 @@ const home = async (req, res) => {
     );
 
     if (!compare) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Contraseña Inválida",
       });
     }
 
-    res.json({ user });
+    res.status(200).json({ user });
   } catch (error) {
     res.status(404).json({ msg: "Token no encontrado" });
   }
@@ -300,7 +300,7 @@ const addIdCommentAtList = async (req, res) => {
     const validateInfo = authTokenDecoded(dataUserDecoded, user);
 
     if (!validateInfo) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Usuario no existe o contraseña inválida",
       });
@@ -308,7 +308,7 @@ const addIdCommentAtList = async (req, res) => {
 
     //Verifica que el user sea de rol student
     if (user.role !== "student") {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
@@ -322,7 +322,7 @@ const addIdCommentAtList = async (req, res) => {
     if (target === "story") {
       const story = (await Story.findOne({ _id: idtarget })) || null;
       if (story === null) {
-        return res.json({ success: false, msg: "Story no existe" });
+        return res.status(404).json({ success: false, msg: "Story no existe" });
       }
       story.idcomment_list.push(com._id);
       await story.save();
@@ -331,7 +331,7 @@ const addIdCommentAtList = async (req, res) => {
     if (target === "source") {
       const source = (await Source.findOne({ _id: idtarget })) || null;
       if (source === null) {
-        return res.json({ success: false, msg: "Recurso no existe" });
+        return res.status(404).json({ success: false, msg: "Recurso no existe" });
       }
       source.idcomment_list.push(com._id);
       await source.save();
@@ -340,16 +340,16 @@ const addIdCommentAtList = async (req, res) => {
     if (target === "subject") {
       const subject = (await Subject.findOne({ _id: idtarget })) || null;
       if (subject === null) {
-        return res.json({ success: false, msg: "Materia no existe" });
+        return res.status(404).json({ success: false, msg: "Materia no existe" });
       }
 
       subject.idcomment_list.push(com._id);
       await subject.save();
     }
     await com.save();
-    res.json(com);
+    res.status(200).json(com);
   } catch (error) {
-    res.json({ succes: false, msg: "Error en controlador addIdCommentAtList" });
+    res.status(500).json({ succes: false, msg: "Error en controlador addIdCommentAtList" });
   }
 };
 
@@ -372,7 +372,7 @@ const deleteCommentById = async (req, res) => {
     const validateInfo = authTokenDecoded(dataUserDecoded, user);
 
     if (!validateInfo) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Usuario no existe o contraseña inválida",
       });
@@ -380,7 +380,7 @@ const deleteCommentById = async (req, res) => {
 
     //Verifica que el user sea de rol student
     if (user.role !== "student") {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
@@ -396,13 +396,13 @@ const deleteCommentById = async (req, res) => {
         { _id: idtarget },
         { $pull: { idcomment_list: idcomment } }
       ).then(data=> result.push(data)).catch((err) => {
-        return res.json({
+        return res.status(400).json({
           success: false,
           msg: "Error eliminando comentario de lista en Subject",
         });
       });
       await Comment.deleteOne({ _id: idcomment }).then(data=> result.push(data)).catch((err) => {
-        return res.json({ success: false, msg: "Error eliminando comentario" });
+        return res.status(400).json({ success: false, msg: "Error eliminando comentario" });
       });
       validateTarget=true
     }
@@ -412,13 +412,13 @@ const deleteCommentById = async (req, res) => {
         { _id: idtarget },
         { $pull: { idcomment_list: idcomment } }
       ).then(data=> result.push(data)).catch((err) => {
-        return res.json({
+        return res.status(400).json({
           success: false,
           msg: "Error eliminando comentario de lista en Source",
         });
       });
       await Comment.deleteOne({ _id: idcomment }).then(data=> result.push(data)).catch((err) => {
-        return res.json({ success: false, msg: "Error eliminando comentario" });
+        return res.status(400).json({ success: false, msg: "Error eliminando comentario" });
       });
       validateTarget=true
     }
@@ -429,13 +429,13 @@ const deleteCommentById = async (req, res) => {
         { _id: idtarget },
         { $pull: { idcomment_list: idcomment } }
       ).then(data=> result.push(data)).catch((err) => {
-        return res.json({
+        return res.status(400).json({
           success: false,
           msg: "Error eliminando comentario de lista en Source",
         });
       });
       await Comment.deleteOne({ _id: idcomment }).then(data=> result.push(data)).catch((err) => {
-        return res.json({ success: false, msg: "Error eliminando comentario" });
+        return res.status(400).json({ success: false, msg: "Error eliminando comentario" });
       });
       validateTarget=true
     }
@@ -464,15 +464,15 @@ const deleteCommentById = async (req, res) => {
     });
 */
     if(!validateTarget){
-    return res.json({ success: true, msg: "introduzca un target correcto" });
+    return res.status(400).json({ success: true, msg: "introduzca un target correcto" });
   }
 
-  res.json(result)
+  res.status(200).json(result)
   
 
   } catch (error) {
     console.log(error)
-    res.json({ succes: false, msg: "Error en controlador deleteCommentById" });
+    res.status(500).json({ succes: false, msg: "Error en controlador deleteCommentById" });
   }
 };
 //TODO: CREAR UN MÉTODO PARA BORRAR USUARIO DE BASE DE DATOS EN CASO DE NO CONFIRMARSE LA CUENTA

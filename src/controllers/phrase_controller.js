@@ -20,7 +20,7 @@ const getPhrase = async (req, res) => {
     const validateInfo = authTokenDecoded(dataUserDecoded, user);
 
     if (!validateInfo) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Usuario no existe o contraseña inválida",
       });
@@ -28,7 +28,7 @@ const getPhrase = async (req, res) => {
 
     //Verifica que el user sea de rol student
     if (user.role !== "student") {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
@@ -38,15 +38,15 @@ const getPhrase = async (req, res) => {
     let phrase = (await Phrase.findOne({ _id: idphrase })) || null;
 
     if (phrase === null) {
-      return res.json({
+      return res.status(404).json({
         success: false,
         msg: "Frase no existe",
       });
     }
 
-    res.json(phrase);
+    res.status(200).json(phrase);
   } catch (error) {
-    return res.json({
+    return res.status(500).json({
       success: false,
       msg: "Error obteniendo frase",
     });

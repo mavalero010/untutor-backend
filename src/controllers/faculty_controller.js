@@ -19,7 +19,7 @@ const getFaculty = async (req, res) => {
     const validateInfo = authTokenDecoded(dataUserDecoded, user);
 
     if (!validateInfo) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Usuario no existe o contraseña inválida",
       });
@@ -30,21 +30,21 @@ const getFaculty = async (req, res) => {
       let iduniversity=user.iduniversity
       const f = await Faculty.paginate({iduniversity}, { page, limit })
       const {docs,totalPages} = f 
-      return res.json({ results:docs, totalPages, page: parseInt(page) });
+      return res.status(200).json({ results:docs, totalPages, page: parseInt(page) });
       
     }
     const faculty = await Faculty.findOne({ _id: idfaculty , iduniversity:user.iduniversity}) || null;
     
     if (faculty === null) {
-      return res.json({
+      return res.status(404).json({
         success: false,
         msg: "idfaculty inválido",
       });
   }
-  res.json(faculty);
+  res.status(200).json(faculty);
   } catch (error) {
 
-    res.json({ succes: false, msg: "error en controlador"});
+    res.status(500).json({ succes: false, msg: "error en controlador"});
   }
 };
 

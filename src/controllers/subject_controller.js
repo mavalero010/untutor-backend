@@ -24,7 +24,7 @@ const getAllSubjects = async (req, res) => {
     const validateInfo = authTokenDecoded(dataUserDecoded, user);
 
     if (!validateInfo) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Usuario no existe o contraseña inválida",
       });
@@ -35,9 +35,9 @@ const getAllSubjects = async (req, res) => {
     const myData = await Subject.paginate({}, { page, limit });
     const { docs, totalPages } = myData;
 
-    res.json({ results:docs, totalPages, page: parseInt(page) });
+    res.status(200).json({ results:docs, totalPages, page: parseInt(page) });
   } catch (error) {
-    res.json({ success: false, msg: "Error en controlador" });
+    res.status(500).json({ success: false, msg: "Error en controlador" });
   }
 };
 const getAllSubjectsByID_Faculty = async (req, res) => {
@@ -58,7 +58,7 @@ const getAllSubjectsByID_Faculty = async (req, res) => {
     const validateInfo = authTokenDecoded(dataUserDecoded, user);
 
     if (!validateInfo) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Usuario no existe, token inválido",
       });
@@ -78,9 +78,9 @@ const getAllSubjectsByID_Faculty = async (req, res) => {
       };
     });
 
-    res.json({ results, totalPages, page: parseInt(page) });
+    res.status(200).json({ results, totalPages, page: parseInt(page) });
   } catch (error) {
-    res.json({ succes: false, msg: "Error en controlador" });
+    res.status(500).json({ succes: false, msg: "Error en controlador" });
   }
 };
 
@@ -102,7 +102,7 @@ const createSubject = async (req, res) => {
     const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
 
     if (!validateInfo) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Admin no existe, token inválido",
       });
@@ -123,7 +123,7 @@ const createSubject = async (req, res) => {
 
     let subject = await Subject.findOne({ name });
     if (subject !== null) {
-      return res.json({
+      return res.status(409).json({
         success: false,
         msg: "Materia ya existe",
       });
@@ -142,14 +142,14 @@ const createSubject = async (req, res) => {
       idtutor_list,
     });
     await subject.save().then((data) =>
-      res.json({
+      res.status(200).json({
         data,
         success: true,
         msg: "Materia creada",
       })
     );
   } catch (error) {
-    res.json({ succes: false, msg: "Error en controlador createSubject" });
+    res.status(500).json({ succes: false, msg: "Error en controlador createSubject" });
   }
 };
 
@@ -171,7 +171,7 @@ const updateSubject = async (req, res) => {
     const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
 
     if (!validateInfo) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Admin no existe, token inválido",
       });
@@ -200,11 +200,11 @@ const updateSubject = async (req, res) => {
     ) || null;
 
     if(subject===null){
-      return res.json({success:false,msg:"Materia no existe"})
+      return res.status(404).json({success:false,msg:"Materia no existe"})
     }
-    res.json(subject);
+    res.status(200).json(subject);
   } catch (error) {
-    res.json({ succes: false, msg: "Error en controlador updateSubject" });
+    res.status(500).json({ succes: false, msg: "Error en controlador updateSubject" });
   }
 };
 
@@ -226,7 +226,7 @@ const addIdTutorAtList = async (req, res) => {
     const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
 
     if (!validateInfo) {
-      return res.json({
+      return res.status(404).json({
         success: false,
         msg: "Admin no existe, token inválido",
       });
@@ -237,20 +237,20 @@ const addIdTutorAtList = async (req, res) => {
     const tutor = await User.findById({_id:idtutor})||null
 
     if(tutor===null){
-      return res.json({
+      return res.status(404).json({
         success: false,
         msg: "Tutor no existe",
       });
     }
     if(tutor.role!=="tutor"){
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Usuario no es de rol tutor",
       });
     }
 
     if(tutor.active===false){
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Tutor inactivo",
       });
@@ -260,7 +260,7 @@ const addIdTutorAtList = async (req, res) => {
 
     let subject = await Subject.findOne({_id:idsubject}) || null
     if(subject===null){
-      return res.json({
+      return res.status(404).json({
         success: false,
         msg: "Materia no existe",
       });
@@ -268,15 +268,15 @@ const addIdTutorAtList = async (req, res) => {
 
     
     if(subject.idtutor_list.indexOf(tutor._id)!==-1){
-      return res.json({success:false,msg:"Tutor ya existe en la lista de materias"})
+      return res.status(409).json({success:false,msg:"Tutor ya existe en la lista de materias"})
     }
 
     subject.idtutor_list.push(tutor._id);
     await subject.save();
 
-    res.json(subject)
+    res.status(200).json(subject)
   } catch (error) {
-    res.json({ succes: false, msg: "Error en controlador addIdTutorAtList" });
+    res.status(500).json({ succes: false, msg: "Error en controlador addIdTutorAtList" });
   }
 };
 
@@ -298,7 +298,7 @@ const addIdSourceAtList = async (req, res) => {
     const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
 
     if (!validateInfo) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         msg: "Admin no existe, token inválido",
       });
@@ -309,7 +309,7 @@ const addIdSourceAtList = async (req, res) => {
     const source = await Source.findById({_id:idsource})||null
 
     if(source===null){
-      return res.json({
+      return res.status(404).json({
         success: false,
         msg: "Recurso no existe",
       });
@@ -319,7 +319,7 @@ const addIdSourceAtList = async (req, res) => {
 
     let subject = await Subject.findOne({_id:idsubject}) || null
     if(subject===null){
-      return res.json({
+      return res.status(404).json({
         success: false,
         msg: "Materia no existe",
       });
@@ -327,15 +327,15 @@ const addIdSourceAtList = async (req, res) => {
 
     
     if(subject.idsource_list.indexOf(subject._id)!==-1){
-      return res.json({success:false,msg:"Source ya existe en la lista de materias"})
+      return res.status(409).json({success:false,msg:"Source ya existe en la lista de materias"})
     }
 
     subject.idsource_list.push(subject._id);
     await subject.save();
     
-    res.json(subject)
+    res.status(200).json(subject)
   } catch (error) {
-    res.json({ succes: false, msg: "Error en controlador addIdsourceAtList" });
+    res.status(500).json({ succes: false, msg: "Error en controlador addIdsourceAtList" });
   }
 };
 

@@ -34,14 +34,14 @@ const registerAdmin = async (req, res) => {
     let unve_admin = (await UnverifiedAdmin.findOne({ email })) || null;
 
     if (admin !== null) {
-      return res.json({
+      return res.status(409).json({
         success: false,
         msg: "Administrador ya existe",
       });
     }
 
     if (unve_admin !== null) {
-      return res.json({
+      return res.status(200).json({
         success: false,
         msg: "Verifica este administrador",
       });
@@ -73,7 +73,7 @@ const registerAdmin = async (req, res) => {
       template
     );
     await unve_admin.save().then((data) => {
-      return res.json({
+      return res.status(200).json({
         data,
         success: true,
         msg: "Admin registrado, verificar en cuenta de correo",
@@ -119,7 +119,7 @@ const loginAdmin = async (req, res) => {
     const token = getUnexpiredToken({ email, password });
 
     //TODO: Buscar campos de seguridad extras para añadir al login, sea mensajes por SMS o autenticacion por huella digital
-    return res.json({
+    return res.status(200).json({
       token,
       admin,
     });
@@ -140,7 +140,7 @@ const confirmAdmin = async (req, res) => {
     const data = getTokenData(token);
 
     if (data === null) {
-      return res.json({
+      return res.status(400).json({
         success: false,
         msg: "Error al obtener data o token de confirmación expirado",
       });
@@ -151,16 +151,16 @@ const confirmAdmin = async (req, res) => {
     // Verificar no existencia del usuario
     const a = (await Admin.findOne({ email })) || null;
     if (a !== null) {
-      return res.json({
+      return res.status(409).json({
         success: false,
-        msg: "Admin ya existe",
+        msg: "Administrador ya existe",
       });
     }
     // Verificar existencia del usuario en base de datos no verificada
     const unv_admin = (await UnverifiedAdmin.findOne({ email })) || null;
 
     if (unv_admin === null) {
-      return res.json({
+      return res.status(404).json({
         success: false,
         msg: "Correo de cuenta no está en lista de espera por verificar",
       });
