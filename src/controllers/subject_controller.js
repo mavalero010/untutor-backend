@@ -5,7 +5,7 @@ const Admin = require("../models/admin_model");
 const Faculty = require("../models/faculty_model");
 const Comment = require("../models/comment_model");
 const { getTokenData, authTokenDecoded } = require("../config/jwt.config");
-
+const multer=require('multer')
 const getAllSubjects = async (req, res) => {
   try {
     // Aquí se verificaría si el token JWT enviado por el cliente es válido
@@ -339,6 +339,9 @@ const addIdSourceAtList = async (req, res) => {
   }
 };
 
+const uploadBackgroundImageSubject=async (req,res)=>{
+
+}
 
 module.exports = {
   getAllSubjects,
@@ -347,5 +350,5 @@ module.exports = {
   updateSubject,
   addIdTutorAtList,
   addIdSourceAtList,
-  
+  uploadBackgroundImageSubject
 };

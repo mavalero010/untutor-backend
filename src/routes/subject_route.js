@@ -11,6 +11,6 @@ routerSubject.post(`/api/${process.env.VERSION_API}/admin/subject`,subjectContro
 routerSubject.put(`/api/${process.env.VERSION_API}/admin/subject`,subjectController.updateSubject) 
 routerSubject.put(`/api/${process.env.VERSION_API}/admin/subject/addtutor`,subjectController.addIdTutorAtList) 
 routerSubject.put(`/api/${process.env.VERSION_API}/admin/subject/addsource`,subjectController.addIdSourceAtList)
-
+routerSubject.put(`/api/${process.env.VERSION_API}/admin/subject/upload_background_image`,subjectController.addIdSourceAtList)
 
 module.exports = routerSubject
