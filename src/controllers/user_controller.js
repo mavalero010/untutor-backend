@@ -1,12 +1,12 @@
-const bcrypt = require("bcrypt");
-
 const User = require("../models/user_model");
+const University = require("../models/university_model");
 const UnverifiedUser = require("../models/unverified_user_model");
 const Comment = require("../models/comment_model");
 const Story = require("../models/story_model");
 const Subject = require("../models/subject_model");
-const Source = require("../models/source_model");
-const multer = require('multer')
+const Source = require("../models/source_model")
+const Faculty = require("../models/faculty_model");
+const multer = require("multer");
 
 const {
   getToken,
@@ -16,10 +16,31 @@ const {
 } = require("../config/jwt.config");
 const { getTemplate, sendEmail } = require("../config/mail.config");
 
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+const bcrypt = require("bcrypt");
+const {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} = require("@aws-sdk/client-s3");
 const dotenv = require("dotenv");
 dotenv.config();
-
 const saltRounds = parseInt(process.env.SALT_ROUNDS_ENCRYPT_PASSWORD);
+const bucketProfilePhoto = process.env.BUCKET_PROFILE_PHOTO;
+const bucketRegion = process.env.BUCKET_REGION;
+const accessKey = process.env.AWS_ACCESS_KEY;
+const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+const s3 = new S3Client({
+  credentials: {
+    accessKeyId: accessKey,
+    secretAccessKey: secretAccessKey,
+  },
+  region: bucketRegion,
+});
+const sharp = require("sharp");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 const registerUser = async (req, res) => {
   try {
@@ -100,7 +121,6 @@ const registerUser = async (req, res) => {
       })
     );
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
       msg: "Error al registrar usuario",
@@ -332,7 +352,9 @@ const addIdCommentAtList = async (req, res) => {
     if (target === "source") {
       const source = (await Source.findOne({ _id: idtarget })) || null;
       if (source === null) {
-        return res.status(404).json({ success: false, msg: "Recurso no existe" });
+        return res
+          .status(404)
+          .json({ success: false, msg: "Recurso no existe" });
       }
       source.idcomment_list.push(com._id);
       await source.save();
@@ -341,7 +363,9 @@ const addIdCommentAtList = async (req, res) => {
     if (target === "subject") {
       const subject = (await Subject.findOne({ _id: idtarget })) || null;
       if (subject === null) {
-        return res.status(404).json({ success: false, msg: "Materia no existe" });
+        return res
+          .status(404)
+          .json({ success: false, msg: "Materia no existe" });
       }
 
       subject.idcomment_list.push(com._id);
@@ -350,7 +374,9 @@ const addIdCommentAtList = async (req, res) => {
     await com.save();
     res.status(200).json(com);
   } catch (error) {
-    res.status(500).json({ succes: false, msg: "Error en controlador addIdCommentAtList" });
+    res
+      .status(500)
+      .json({ succes: false, msg: "Error en controlador addIdCommentAtList" });
   }
 };
 
@@ -388,60 +414,84 @@ const deleteCommentById = async (req, res) => {
     }
     //Obtengo el target y el idcomment para saber en que base de datos buscar y eliminar, sea Story, Source, Subject
     const { target, idcomment, idtarget } = req.query;
-    let validateTarget=false
-    let result=[]
+    let validateTarget = false;
+    let result = [];
+
+    const c =
+      (await Comment.findOne({ _id: idcomment, idauthor: user._id })) || null;
+    
+    if (c === null) {
+      return res.status(401).json({
+        msg: "Sin autorización para borrar",
+      });
+    }
 
     if (target === "subject") {
-      
       await Subject.updateOne(
         { _id: idtarget },
         { $pull: { idcomment_list: idcomment } }
-      ).then(data=> result.push(data)).catch((err) => {
-        return res.status(400).json({
-          success: false,
-          msg: "Error eliminando comentario de lista en Subject",
+      )
+        .then((data) => result.push(data))
+        .catch((err) => {
+          return res.status(400).json({
+            success: false,
+            msg: "Error eliminando comentario de lista en Subject",
+          });
         });
-      });
-      await Comment.deleteOne({ _id: idcomment }).then(data=> result.push(data)).catch((err) => {
-        return res.status(400).json({ success: false, msg: "Error eliminando comentario" });
-      });
-      validateTarget=true
+      await Comment.deleteOne({ _id: idcomment })
+        .then((data) => result.push(data))
+        .catch((err) => {
+          return res
+            .status(400)
+            .json({ success: false, msg: "Error eliminando comentario" });
+        });
+      validateTarget = true;
     }
     if (target === "source") {
-      
       await Source.updateOne(
         { _id: idtarget },
         { $pull: { idcomment_list: idcomment } }
-      ).then(data=> result.push(data)).catch((err) => {
-        return res.status(400).json({
-          success: false,
-          msg: "Error eliminando comentario de lista en Source",
+      )
+        .then((data) => result.push(data))
+        .catch((err) => {
+          return res.status(400).json({
+            success: false,
+            msg: "Error eliminando comentario de lista en Source",
+          });
         });
-      });
-      await Comment.deleteOne({ _id: idcomment }).then(data=> result.push(data)).catch((err) => {
-        return res.status(400).json({ success: false, msg: "Error eliminando comentario" });
-      });
-      validateTarget=true
+      await Comment.deleteOne({ _id: idcomment })
+        .then((data) => result.push(data))
+        .catch((err) => {
+          return res
+            .status(400)
+            .json({ success: false, msg: "Error eliminando comentario" });
+        });
+      validateTarget = true;
     }
 
     if (target === "story") {
-      
       await Story.updateOne(
         { _id: idtarget },
         { $pull: { idcomment_list: idcomment } }
-      ).then(data=> result.push(data)).catch((err) => {
-        return res.status(400).json({
-          success: false,
-          msg: "Error eliminando comentario de lista en Source",
+      )
+        .then((data) => result.push(data))
+        .catch((err) => {
+          return res.status(400).json({
+            success: false,
+            msg: "Error eliminando comentario de lista en Source",
+          });
         });
-      });
-      await Comment.deleteOne({ _id: idcomment }).then(data=> result.push(data)).catch((err) => {
-        return res.status(400).json({ success: false, msg: "Error eliminando comentario" });
-      });
-      validateTarget=true
+      await Comment.deleteOne({ _id: idcomment })
+        .then((data) => result.push(data))
+        .catch((err) => {
+          return res
+            .status(400)
+            .json({ success: false, msg: "Error eliminando comentario" });
+        });
+      validateTarget = true;
     }
-    
-/*
+
+    /*
     await Comment.pre('remove', async function (next) {
      
       try {
@@ -459,25 +509,25 @@ const deleteCommentById = async (req, res) => {
         );
         next();
       } catch (error) {
-        console.log(error)
         next(error);
       }
     });
 */
-    if(!validateTarget){
-    return res.status(400).json({ success: true, msg: "introduzca un target correcto" });
-  }
+    if (!validateTarget) {
+      return res
+        .status(400)
+        .json({ success: true, msg: "introduzca un target correcto" });
+    }
 
-  res.status(200).json(result)
-  
-
+    res.status(200).json(result);
   } catch (error) {
-    console.log(error)
-    res.status(500).json({ succes: false, msg: "Error en controlador deleteCommentById" });
+    res
+      .status(500)
+      .json({ succes: false, msg: "Error en controlador deleteCommentById" });
   }
 };
 
-const uploadProfilePhoto=async (req,res)=>{
+const uploadProfilePhoto = async (req, res, file) => {
   try {
     // Aquí se verificaría si el token JWT enviado por el cliente es válido
     // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
@@ -510,14 +560,150 @@ const uploadProfilePhoto=async (req,res)=>{
       });
     }
 
-    const storage = multer.memoryStorage()
-    const upload = multer({ storage: storage })
-
-    upload.single('image')
-    
-    res.json(user)
+    const buffer = await sharp(file.buffer)
+      .resize({ height: 1920, width: 1080, fit: "contain" })
+      .toBuffer();
+    const imageName = await bcrypt.hash(file.originalname, saltRounds);
+    const params = {
+      Bucket: bucketProfilePhoto,
+      Key: imageName,
+      Body: file.buffer, //buffer
+      ContentType: file.mimetype,
+    };
+    const command = new PutObjectCommand(params);
+    await s3.send(command);
+    const u=await User.updateOne(
+      { _id: user.id },
+      { $set: { perfil_photo: imageName } }
+    );
+    res.status(200).json(u);
   } catch (error) {
-    res.status(500).json({ succes: false, msg: "Error en controlador uploadProfilePhoto" });
+    res
+      .status(500)
+      .json({ succes: false, msg: "Error en servidor" });
+  }
+};
+
+const deleteProfilePhoto= async (req,res)=>{
+  try {
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "No se proporcionó un token" });
+    }
+
+    //Decodifico Token
+    const dataUserDecoded = getTokenData(token);
+    const mail = dataUserDecoded.data.email;
+    //Lo busco en BD
+    let user = (await User.findOne({ email: mail })) || null;
+
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataUserDecoded, user);
+
+    if (!validateInfo) {
+      return res.status(401).json({
+        success: false,
+        msg: "Usuario no existe o contraseña inválida",
+      });
+    }
+
+    //Verifica que el user sea de rol student
+    if (user.role !== "student") {
+      return res.status(401).json({
+        success: false,
+        msg: "Válido solo para rol student",
+      });
+    }
+
+    if(user.perfil_photo===null){
+      return res.status(401).json({
+        msg:"No hay imagenes para borrar"
+      })
+    }
+
+    const params={
+      Bucket: bucketProfilePhoto,
+      Key:user.perfil_photo
+    }
+    const command = new DeleteObjectCommand(params)
+    await s3.send(command)
+
+    const newuser= await User.updateOne({_id:user._id},{ $set: { perfil_photo: null } }, { new: true })
+    res.json(newuser)
+  } catch (error) {
+    res
+    .status(500)
+    .json({ succes: false, msg: "Error en servidor" });
+  }
+}
+
+const getUserById = async (req,res)=>{
+  try {
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "No se proporcionó un token" });
+    }
+
+    //Decodifico Token
+    const dataUserDecoded = getTokenData(token);
+    const mail = dataUserDecoded.data.email;
+    //Lo busco en BD
+    let user = (await User.findOne({ email: mail })) || null;
+
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataUserDecoded, user);
+
+    if (!validateInfo) {
+      return res.status(401).json({
+        success: false,
+        msg: "Token inválido",
+      });
+    }
+
+
+    const {iduser}=req.query
+    let us = await User.findOne({_id:iduser}) || null 
+    let university = await University.findOne({_id:us.iduniversity}) || null
+    let faculty = await Faculty.findOne({_id:us.idfaculty})
+    if(us===null){
+      return res.status(404).json({
+        msg:"Perfil de usuario no existe"
+      })
+    }
+
+    let url = null
+    if(us.perfil_photo!==null){
+      const getObjectParams={
+        Bucket:bucketProfilePhoto, 
+        Key:us.perfil_photo
+      }
+      const command =  new GetObjectCommand(getObjectParams);
+     url =  await getSignedUrl(s3, command, { expiresIn: 3600 });
+    }
+   
+    res.status(200).json({
+      _id:us._id,
+      name:us.name,
+      university:{name:university.name,_id:university._id},
+      email:us.email,
+      gender:us.gender,
+      birthday:us.birthday,
+      biography:us.biography,
+      role:us.role,
+      faculty:{_id:faculty._id,name:faculty.name},
+      city_of_birth:us.city_of_birth,
+      perfil_photo:url, 
+      idfavorite_subjects:us.idfavorite_subjects,
+      phone:us.phone
+    })
+  } catch (error) {
+    res
+    .status(500)
+    .json({ succes: false, msg: "Error en servidor" });
   }
 }
 //TODO: CREAR UN MÉTODO PARA BORRAR USUARIO DE BASE DE DATOS EN CASO DE NO CONFIRMARSE LA CUENTA
@@ -528,5 +714,7 @@ module.exports = {
   home,
   addIdCommentAtList,
   deleteCommentById,
-  uploadProfilePhoto
+  uploadProfilePhoto,
+  deleteProfilePhoto,
+  getUserById
 };
