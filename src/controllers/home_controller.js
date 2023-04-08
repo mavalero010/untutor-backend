@@ -3,8 +3,38 @@ const Event = require("../models/event_model");
 const User = require("../models/user_model");
 const Phrase = require("../models/phrase_model");
 const Source = require("../models/source_model")
+const Faculty = require("../models/faculty_model")
 const { getTokenData, authTokenDecoded } = require("../config/jwt.config");
 const Fuse = require("fuse.js");
+
+const multer = require("multer");
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+const bcrypt = require("bcrypt");
+const {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} = require("@aws-sdk/client-s3");
+const dotenv = require("dotenv");
+dotenv.config();
+
+const saltRounds = parseInt(process.env.SALT_ROUNDS_ENCRYPT_PASSWORD);
+const bucketSourceFile = process.env.BUCKET_SOURCE_UNTUTOR;
+const bucketProfilePhoto=process.env.BUCKET_PROFILE_PHOTO
+const bucketRegion = process.env.BUCKET_REGION;
+const accessKey = process.env.AWS_ACCESS_KEY;
+const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+const s3 = new S3Client({
+  credentials: {
+    accessKeyId: accessKey,
+    secretAccessKey: secretAccessKey,
+  },
+  region: bucketRegion,
+});
+const sharp = require("sharp");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 const getHome = async (req, res) => {
   try {
@@ -44,15 +74,24 @@ const getHome = async (req, res) => {
 
     //Obtengo  las 6 primeras materias aleatorias relacionadas a la facultad del usuario
     const idfaculty = user.idfaculty;
-    let subjects = (await Subject.find({ idfaculty })).map((s) => {
+    let subjects = (await Subject.find({ idfaculty:idfaculty }))
+  
+    let faculty = await Faculty.findOne({_id:idfaculty})
+    let tutors = await User.find()
+
+    subjects=subjects.map((s) => {
+
       return {
         _id: s._id,
         name: s.name,
+        credits:s.credits,
+        description:s.description,
         url_background_image: s.url_background_image,
-        tutors: s.idtutor_list.length,
+        difficulty_level:s.difficulty_level,
+        faculty:{_id:s.idfaculty,name:faculty.name},
+        tutors: tutors.filter(t=> s.idtutor_list.indexOf(t._id)!==-1).map(tu=>{return {_id:tu._id,name:tu.name}}),
       };
     });
-
     if (subjects.length >= 6) {
       subjects = subjects
         .sort(function () {
@@ -151,11 +190,72 @@ const getBrowser = async (req, res) => {
       DB = await Subject.find();
       const fuse = new Fuse(DB, options);
       searchResults = fuse.search(search_string);
+      let subList=[]
+
+      for (s of searchResults){
+        const getObjectParams = {
+          Bucket: bucketProfilePhoto,
+          Key: s.item.url_background_image
+        };
+        let url=null
+        if(s.item.url_background_image!==null){
+        const command =  new GetObjectCommand(getObjectParams);
+         url =  await getSignedUrl(s3, command, { expiresIn: 3600 });
+      }
+      subList.push({
+        item:{
+        _id:s.item._id,
+        name:s.item.name,
+        credits:s.item.credits,
+        description:s.item.description,
+        category:s.item.category,
+        url_background_image:url,
+        difficulty_level:s.item.difficulty_level,
+        idfaculty:s.item.idfaculty,
+        idtutor_list:s.item.idtutor_list,
+        idsource_list:s.item.idsource_list,
+        idcomment_list:s.item.idcomment_list,
+        idstory_list:s.item.idstory_list
+      },
+      refIndex:s.refIndex,
+      score:s.score
+    })
+
+      }
+     searchResults=subList
     }
     if (filter === "source") {
       DB = await Source.find();
       const fuse = new Fuse(DB, options);
       searchResults = fuse.search(search_string);
+      let sourList=[]
+
+      for (s of searchResults){
+        const getObjectParams = {
+          Bucket: bucketSourceFile,
+          Key: s.item.url_file
+        };
+        let url=null
+        if(s.item.url_file!==null){
+        const command =  new GetObjectCommand(getObjectParams);
+         url =  await getSignedUrl(s3, command, { expiresIn: 3600 });
+      }
+      sourList.push({
+        item:{
+        _id:s.item._id,
+        name:s.item.name,
+        description:s.item.description,
+        category:s.item.category,
+        url_file:url,
+        idsubject:s.item.idsubject,
+        idcomment_list:s.item.idcomment_list
+      },
+      refIndex:s.refIndex,
+      score:s.score
+    })
+
+      }
+     searchResults=sourList
     }
     if (filter === "event") {
       DB = await Event.find();

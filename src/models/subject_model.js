@@ -5,7 +5,7 @@ const subjectSchema = new mongoose.Schema(
     name: { type: String, require: true, unique:true},
     credits: { type: Number, require: true },
     description: { type: String, require: true },
-    url_background_image: { type: String, require: true }, //TODO: Ajustar tipo de dato correcto
+    url_background_image: { type: Object, require: true }, //TODO: Ajustar tipo de dato correcto
     difficulty_level: { type: Number, require: true },
     idfaculty:{type:mongoose.Schema.ObjectId, //TODO: DEBE SER REQUIRE TRUE
     ref:'Faculty',require:true},
