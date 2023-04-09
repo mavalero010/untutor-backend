@@ -15,6 +15,7 @@ const {
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
+  headObject
 } = require("@aws-sdk/client-s3");
 const dotenv = require("dotenv");
 dotenv.config();
@@ -465,7 +466,7 @@ const uploadBackgroundImageSubject = async (req, res, file) => {
       ContentType: file.mimetype,
     };
     const command = new PutObjectCommand(params);
-    await s3.send(command);
+    await s3.send(command)
     const { idsubject } = req.query;
     const subject = await Subject.updateOne(
       { _id: idsubject },
@@ -513,15 +514,18 @@ const getSubjectById = async (req, res) => {
       return res.status(404).json({ msg: "Subject no existe" });
     }
 
-    const getObjectParams={
-      Bucket:bucketProfilePhoto, 
-      Key:subject.url_background_image
+    if(subject.url_background_image!==null){
+      const getObjectParams={
+        Bucket:bucketProfilePhoto, 
+        Key:subject.url_background_image
+      }
+  
+      
+      const command =  new GetObjectCommand(getObjectParams);
+      const url =  await getSignedUrl(s3, command, { expiresIn: 3600 });
+      subject.url_background_image=url
     }
 
-    
-    const command =  new GetObjectCommand(getObjectParams);
-    const url =  await getSignedUrl(s3, command, { expiresIn: 3600 });
-    subject.url_background_image=url
     
     res.json(subject);  
   } catch (error) {
@@ -542,17 +546,17 @@ const deleteProfilePhotoSubject=async(req,res)=>{
     }
 
     //Decodifico Token
-    const dataUserDecoded = getTokenData(token);
-    const mail = dataUserDecoded.data.email;
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
     //Lo busco en BD
-    let user = (await User.findOne({ email: mail })) || null;
+    let admin = (await Admin.findOne({ email: mail })) || null;
     //valido que la info decodificada del token sea válida
-    const validateInfo = authTokenDecoded(dataUserDecoded, user);
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
 
     if (!validateInfo) {
       return res.status(401).json({
         success: false,
-        msg: "Usuario no existe, token inválido",
+        msg: "Admin no existe, token inválido",
       });
     }
 
@@ -588,6 +592,61 @@ const deleteProfilePhotoSubject=async(req,res)=>{
   }
 }
 
+const deleteSubjectById = async(req,res)=>{
+  try {
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({ message: "No se proporcionó un token" });
+    }
+
+    //Decodifico Token
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    //Lo busco en BD
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+
+    if (!validateInfo) {
+      return res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    const {idsubject}=req.query
+    const subject = await Subject.findOne({_id:idsubject}) || null
+
+    if(subject===null){
+      return res.status(404).json({
+        msg:"Materia no existe"
+      })
+    }
+
+    if(subject.url_background_image===null){
+      return res.status(401).json({
+        msg:"No hay imagenes para borrar"
+      })
+    }
+      const params={
+        Bucket: bucketProfilePhoto,
+        Key:subject.url_background_image
+      }
+
+      const command = new DeleteObjectCommand(params)
+      await s3.send(command)
+
+      const s = await Subject.deleteOne({_id:idsubject})
+
+    res.json(s)
+  } catch (error) {
+    res.status(500).json({
+      succes: false,
+      msg: "Error en servidor ",
+    });
+  }
+}
 module.exports = {
   getAllSubjects,
   getAllSubjectsByID_Faculty,
@@ -597,5 +656,6 @@ module.exports = {
   addIdSourceAtList,
   uploadBackgroundImageSubject,
   getSubjectById,
-  deleteProfilePhotoSubject
+  deleteProfilePhotoSubject,
+  deleteSubjectById
 };
