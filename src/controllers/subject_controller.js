@@ -4,6 +4,7 @@ const User = require("../models/user_model");
 const Admin = require("../models/admin_model");
 const Faculty = require("../models/faculty_model");
 const Comment = require("../models/comment_model");
+const Story = require("../models/story_model");
 const { getTokenData, authTokenDecoded } = require("../config/jwt.config");
 
 const multer = require("multer");
@@ -15,7 +16,7 @@ const {
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
-  headObject
+  headObject,
 } = require("@aws-sdk/client-s3");
 const dotenv = require("dotenv");
 dotenv.config();
@@ -33,7 +34,6 @@ const s3 = new S3Client({
 });
 const sharp = require("sharp");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
-
 
 const getAllSubjects = async (req, res) => {
   try {
@@ -64,26 +64,25 @@ const getAllSubjects = async (req, res) => {
     const myData = await Subject.paginate({}, { page, limit });
     const { docs, totalPages } = myData;
 
-   // const command =  new GetObjectCommand(getObjectParams);
+    // const command =  new GetObjectCommand(getObjectParams);
     //const url =  await getSignedUrl(s3, command, { expiresIn: 3600 });
 
     let tutors = await User.find({ role: "tutor" });
     const faculties = await Faculty.find({
       _id: { $in: docs.map((d) => d.idfaculty) },
     });
-    let subs = []
+    let subs = [];
 
-    for(const s  of docs){
+    for (const s of docs) {
+      const getObjectParams = {
+        Bucket: bucketProfilePhoto,
+        Key: s.url_background_image,
+      };
 
-      const getObjectParams={
-        Bucket:bucketProfilePhoto, 
-        Key:s.url_background_image
-      }
-      
-        let url=null
-        if(s.url_background_image!==null){
-        const command =  new GetObjectCommand(getObjectParams);
-         url =  await getSignedUrl(s3, command, { expiresIn: 3600 });
+      let url = null;
+      if (s.url_background_image !== null) {
+        const command = new GetObjectCommand(getObjectParams);
+        url = await getSignedUrl(s3, command, { expiresIn: 3600 });
       }
       subs.push({
         _id: s._id,
@@ -92,14 +91,14 @@ const getAllSubjects = async (req, res) => {
         description: s.description,
         url_background_image: url,
         difficulty_level: s.difficulty_level,
-        faculty: s.idfaculty,
+        faculty: faculties.filter(f=> f.equals(s.idfaculty)).map(fa=>{return{_id:fa._id,name:fa.name}}),
         tutors: tutors
           .filter((t) => s.idtutor_list.indexOf(t._id) !== -1)
           .map((tu) => {
             return { _id: tu._id, name: tu.name };
           }),
       });
-    };
+    }
 
     res.status(200).json({ results: subs, totalPages, page: parseInt(page) });
   } catch (error) {
@@ -136,25 +135,25 @@ const getAllSubjectsByID_Faculty = async (req, res) => {
     const myData = await Subject.paginate({ idfaculty }, { page, limit });
 
     const { docs, totalPages } = myData;
-    const results =[] 
-    for(d of docs) {
-      const getObjectParams={
-        Bucket:bucketProfilePhoto, 
-        Key:d.url_background_image
-      }
-        let url=null
-        if(d.url_background_image!==null){
-        const command =  new GetObjectCommand(getObjectParams);
-         url =  await getSignedUrl(s3, command, { expiresIn: 3600 });
+    const results = [];
+    for (d of docs) {
+      const getObjectParams = {
+        Bucket: bucketProfilePhoto,
+        Key: d.url_background_image,
+      };
+      let url = null;
+      if (d.url_background_image !== null) {
+        const command = new GetObjectCommand(getObjectParams);
+        url = await getSignedUrl(s3, command, { expiresIn: 3600 });
       }
 
-      results.push( {
+      results.push({
         _id: d._id,
         name: d.name,
         url_background_image: url,
         tutors: d.idtutor_list.length,
-      })
-    };
+      });
+    }
 
     res.status(200).json({ results, totalPages, page: parseInt(page) });
   } catch (error) {
@@ -432,7 +431,6 @@ const addIdSourceAtList = async (req, res) => {
 
 const uploadBackgroundImageSubject = async (req, res, file) => {
   try {
-    
     // Aquí se verificaría si el token JWT enviado por el cliente es válido
     // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
     const token = req.headers.authorization.split(" ")[1];
@@ -466,14 +464,13 @@ const uploadBackgroundImageSubject = async (req, res, file) => {
       ContentType: file.mimetype,
     };
     const command = new PutObjectCommand(params);
-    await s3.send(command)
+    await s3.send(command);
     const { idsubject } = req.query;
     const subject = await Subject.updateOne(
       { _id: idsubject },
       { $set: { url_background_image: imageName } }
     );
 
-   
     res.status(200).json(subject);
   } catch (error) {
     res.status(500).json({
@@ -507,36 +504,73 @@ const getSubjectById = async (req, res) => {
       });
     }
 
-    const { idsubject } = req.query;     
+    const { idsubject } = req.query;
     const subject = (await Subject.findOne({ _id: idsubject })) || null;
-
     if (subject === null) {
       return res.status(404).json({ msg: "Subject no existe" });
     }
+    let tutors = await User.find({ role: "tutor" });
+    let stories = await Story.find({ idsubject });
+    let faculty = await Faculty.findOne({ _id: subject.idfaculty });
+    let comments = await Comment.find({ idtarget: idsubject });
+    let authors = await User.find({ role: "student" });
+    let sources= await Source.find({idsubject})
 
-    if(subject.url_background_image!==null){
-      const getObjectParams={
-        Bucket:bucketProfilePhoto, 
-        Key:subject.url_background_image
-      }
-  
-      
-      const command =  new GetObjectCommand(getObjectParams);
-      const url =  await getSignedUrl(s3, command, { expiresIn: 3600 });
-      subject.url_background_image=url
+
+    if (subject.url_background_image !== null) {
+      const getObjectParams = {
+        Bucket: bucketProfilePhoto,
+        Key: subject.url_background_image,
+      };
+
+      const command = new GetObjectCommand(getObjectParams);
+      const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+      subject.url_background_image = url;
     }
+    const s = {
+      _id: subject._id,
+      name: subject.name,
+      credits: subject.credits,
+      description: subject.description,
+      url_background_image: subject.url_background_image,
+      difficulty_level: subject.difficulty_level,
+      faculty: { _id: faculty._id, name: faculty.name },
+      tutors: tutors
+        .filter((t) => subject.idtutor_list.indexOf(t._id) !== -1)
+        .map((tu) => {
+          return { _id: tu._id, name: tu.name };
+        }),
+      stories: stories.map((s) => {
+        return { _id: s._id, name: s.name, multimedia: s.multimedia };
+      }),
+      comments: comments.map((c) => {
+        return {
+          _id: c._id,
+          comment: c.comment,
+          author: authors
+            .filter((a) => a._id.equals(c.idauthor))
+            .map((au) => {
+              return {
+                _id: au._id,
+                name: au.name,
+                perfil_photo: au.perfil_photo,
+              };
+            }),
+        };
+      }),
+      sources:sources.map(s=>{return {name:s.name,url:s.url_file}})
+    };
 
-    
-    res.json(subject);  
+    res.json(s);
   } catch (error) {
     res.status(500).json({
       succes: false,
       msg: "Error en controlador uploadBackgroundImageSubject",
-    }); 
+    });
   }
 };
 
-const deleteProfilePhotoSubject=async(req,res)=>{
+const deleteProfilePhotoSubject = async (req, res) => {
   try {
     // Aquí se verificaría si el token JWT enviado por el cliente es válido
     // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
@@ -560,39 +594,43 @@ const deleteProfilePhotoSubject=async(req,res)=>{
       });
     }
 
-    const {idsubject}=req.query
-    const subject = await Subject.findOne({_id:idsubject}) || null
+    const { idsubject } = req.query;
+    const subject = (await Subject.findOne({ _id: idsubject })) || null;
 
-    if(subject===null){
+    if (subject === null) {
       return res.status(404).json({
-        msg:"Materia no existe"
-      })
+        msg: "Materia no existe",
+      });
     }
 
-    if(subject.url_background_image===null){
+    if (subject.url_background_image === null) {
       return res.status(401).json({
-        msg:"No hay imagenes para borrar"
-      })
+        msg: "No hay imagenes para borrar",
+      });
     }
-      const params={
-        Bucket: bucketProfilePhoto,
-        Key:subject.url_background_image
-      }
+    const params = {
+      Bucket: bucketProfilePhoto,
+      Key: subject.url_background_image,
+    };
 
-      const command = new DeleteObjectCommand(params)
-      await s3.send(command)
+    const command = new DeleteObjectCommand(params);
+    await s3.send(command);
 
-      const newsub= await Subject.updateOne({_id:idsubject},{ $set: { url_background_image: null } }, { new: true })
-        res.json(newsub)
+    const newsub = await Subject.updateOne(
+      { _id: idsubject },
+      { $set: { url_background_image: null } },
+      { new: true }
+    );
+    res.json(newsub);
   } catch (error) {
     res.status(500).json({
       succes: false,
       msg: "Error en servidor ",
     });
   }
-}
+};
 
-const deleteSubjectById = async(req,res)=>{
+const deleteSubjectById = async (req, res) => {
   try {
     // Aquí se verificaría si el token JWT enviado por el cliente es válido
     // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
@@ -615,38 +653,38 @@ const deleteSubjectById = async(req,res)=>{
         msg: "Admin no existe, token inválido",
       });
     }
-    const {idsubject}=req.query
-    const subject = await Subject.findOne({_id:idsubject}) || null
+    const { idsubject } = req.query;
+    const subject = (await Subject.findOne({ _id: idsubject })) || null;
 
-    if(subject===null){
+    if (subject === null) {
       return res.status(404).json({
-        msg:"Materia no existe"
-      })
+        msg: "Materia no existe",
+      });
     }
 
-    if(subject.url_background_image===null){
+    if (subject.url_background_image === null) {
       return res.status(401).json({
-        msg:"No hay imagenes para borrar"
-      })
+        msg: "No hay imagenes para borrar",
+      });
     }
-      const params={
-        Bucket: bucketProfilePhoto,
-        Key:subject.url_background_image
-      }
+    const params = {
+      Bucket: bucketProfilePhoto,
+      Key: subject.url_background_image,
+    };
 
-      const command = new DeleteObjectCommand(params)
-      await s3.send(command)
+    const command = new DeleteObjectCommand(params);
+    await s3.send(command);
 
-      const s = await Subject.deleteOne({_id:idsubject})
+    const s = await Subject.deleteOne({ _id: idsubject });
 
-    res.json(s)
+    res.json(s);
   } catch (error) {
     res.status(500).json({
       succes: false,
       msg: "Error en servidor ",
     });
   }
-}
+};
 module.exports = {
   getAllSubjects,
   getAllSubjectsByID_Faculty,
@@ -657,5 +695,5 @@ module.exports = {
   uploadBackgroundImageSubject,
   getSubjectById,
   deleteProfilePhotoSubject,
-  deleteSubjectById
+  deleteSubjectById,
 };
