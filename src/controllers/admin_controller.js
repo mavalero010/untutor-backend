@@ -1,9 +1,11 @@
 const Admin = require("../models/admin_model");
+const User = require("../models/user_model");
 const UnverifiedAdmin = require("../models/unverified_admin_model");
 const bcrypt = require("bcrypt");
 const {
   getToken,
   getTokenData,
+  authTokenDecoded,
   getUnexpiredToken,
 } = require("../config/jwt.config");
 const { getAdminTemplate, sendEmail } = require("../config/mail.config");
@@ -208,12 +210,93 @@ const confirmAdmin = async (req, res) => {
     return res.redirect("/confirm.html");
 
   } catch (error) {
-    res.status(404).json({ msg: "Error en controlador confirmAdmin" });
+    res.status(500).json({ msg: "Error en servidor " });
   }
 };
 
+const createTutor=async(req,res)=>{
+try {
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({ message: "No se proporcionó un token" });
+    }
+
+    //Decodifico Token
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    //Lo busco en BD
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+
+    if (!validateInfo) {
+      return res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+
+    let {
+      name,
+      iduniversity,
+      email,
+      password,
+      gender,
+      birthday,
+      biography,
+      role,
+      idfaculty,
+      city_of_birth,
+      perfil_photo,
+      idfavorite_subjects,
+      phone,
+    } = req.body;
+
+    //Encripta clave
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    // Verificar que el usuario no exista
+    let user = (await User.findOne({ email })) || null;
+    if (user !== null) {
+      return res.status(409).json({
+        success: false,
+        msg: "Email ya registrado",
+      });
+    }
+    password = hashedPassword;
+    user = new User({
+      name,
+      iduniversity,
+      email,
+      password,
+      gender,
+      birthday,
+      biography,
+      active:true,
+      role,
+      idfaculty,
+      city_of_birth,
+      perfil_photo,
+      idfavorite_subjects,
+      phone,
+    });
+
+    await user.save().then((data) =>
+      res.status(200).json({
+        data,
+        success: true,
+        msg: "Tutor registrado",
+      })
+    );
+
+} catch (error) {
+  res.status(500).json({ msg: "Error en servidor " });
+}
+}
 module.exports = {
   registerAdmin,
   loginAdmin,
   confirmAdmin,
+  createTutor
 };

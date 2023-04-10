@@ -4,7 +4,7 @@ const UnverifiedUser = require("../models/unverified_user_model");
 const Comment = require("../models/comment_model");
 const Story = require("../models/story_model");
 const Subject = require("../models/subject_model");
-const Source = require("../models/source_model")
+const Source = require("../models/source_model");
 const Faculty = require("../models/faculty_model");
 const multer = require("multer");
 
@@ -80,13 +80,13 @@ const registerUser = async (req, res) => {
       });
     }
 
-    if (role !== "student") {
+    /*if (role !== "student") {
       return res.status(401).json({
         success: false,
         msg: "Válido solo para cuentas de rol student",
       });
     }
-
+*/
     // Crear un nuevo usuario
     password = hashedPassword;
     unv_user = new UnverifiedUser({
@@ -328,13 +328,13 @@ const addIdCommentAtList = async (req, res) => {
     }
 
     //Verifica que el user sea de rol student
-    if (user.role !== "student") {
+    /*if (user.role !== "student") {
       return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
     }
-
+*/
     //Obtengo el target para saber en que base de datos buscar, sea Story, Source, Subject
     const { target } = req.query;
     const { comment, idauthor, idtarget } = req.body;
@@ -406,12 +406,12 @@ const deleteCommentById = async (req, res) => {
     }
 
     //Verifica que el user sea de rol student
-    if (user.role !== "student") {
+    /*if (user.role !== "student") {
       return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
-    }
+    }*/
     //Obtengo el target y el idcomment para saber en que base de datos buscar y eliminar, sea Story, Source, Subject
     const { target, idcomment, idtarget } = req.query;
     let validateTarget = false;
@@ -419,7 +419,7 @@ const deleteCommentById = async (req, res) => {
 
     const c =
       (await Comment.findOne({ _id: idcomment, idauthor: user._id })) || null;
-    
+
     if (c === null) {
       return res.status(401).json({
         msg: "Sin autorización para borrar",
@@ -553,12 +553,12 @@ const uploadProfilePhoto = async (req, res, file) => {
     }
 
     //Verifica que el user sea de rol student
-    if (user.role !== "student") {
+    /*if (user.role !== "student") {
       return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
-    }
+    }*/
 
     const buffer = await sharp(file.buffer)
       .resize({ height: 1920, width: 1080, fit: "contain" })
@@ -572,19 +572,17 @@ const uploadProfilePhoto = async (req, res, file) => {
     };
     const command = new PutObjectCommand(params);
     await s3.send(command);
-    const u=await User.updateOne(
+    const u = await User.updateOne(
       { _id: user.id },
       { $set: { perfil_photo: imageName } }
     );
     res.status(200).json(u);
   } catch (error) {
-    res
-      .status(500)
-      .json({ succes: false, msg: "Error en servidor" });
+    res.status(500).json({ succes: false, msg: "Error en servidor" });
   }
 };
 
-const deleteProfilePhoto= async (req,res)=>{
+const deleteProfilePhoto = async (req, res) => {
   try {
     // Aquí se verificaría si el token JWT enviado por el cliente es válido
     // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
@@ -610,36 +608,38 @@ const deleteProfilePhoto= async (req,res)=>{
     }
 
     //Verifica que el user sea de rol student
-    if (user.role !== "student") {
+    /* if (user.role !== "student") {
       return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
-    }
+    }*/
 
-    if(user.perfil_photo===null){
+    if (user.perfil_photo === null) {
       return res.status(401).json({
-        msg:"No hay imagenes para borrar"
-      })
+        msg: "No hay imagenes para borrar",
+      });
     }
 
-    const params={
+    const params = {
       Bucket: bucketProfilePhoto,
-      Key:user.perfil_photo
-    }
-    const command = new DeleteObjectCommand(params)
-    await s3.send(command)
+      Key: user.perfil_photo,
+    };
+    const command = new DeleteObjectCommand(params);
+    await s3.send(command);
 
-    const newuser= await User.updateOne({_id:user._id},{ $set: { perfil_photo: null } }, { new: true })
-    res.json(newuser)
+    const newuser = await User.updateOne(
+      { _id: user._id },
+      { $set: { perfil_photo: null } },
+      { new: true }
+    );
+    res.json(newuser);
   } catch (error) {
-    res
-    .status(500)
-    .json({ succes: false, msg: "Error en servidor" });
+    res.status(500).json({ succes: false, msg: "Error en servidor" });
   }
-}
+};
 
-const getUserById = async (req,res)=>{
+const getUserById = async (req, res) => {
   try {
     // Aquí se verificaría si el token JWT enviado por el cliente es válido
     // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
@@ -664,49 +664,216 @@ const getUserById = async (req,res)=>{
       });
     }
 
-
-    const {iduser}=req.query
-    let us = await User.findOne({_id:iduser}) || null 
-    let university = await University.findOne({_id:us.iduniversity}) || null
-    let faculty = await Faculty.findOne({_id:us.idfaculty})
-    if(us===null){
+    const { iduser } = req.query;
+    let us = (await User.findOne({ _id: iduser })) || null;
+    let university =
+      (await University.findOne({ _id: us.iduniversity })) || null;
+    let faculty = await Faculty.findOne({ _id: us.idfaculty });
+    let subjects = await Subject.find({_id:{$in:us.idfavorite_subjects}})
+    if (us === null) {
       return res.status(404).json({
-        msg:"Perfil de usuario no existe"
-      })
+        msg: "Perfil de usuario no existe",
+      });
+    }
+    let url = null;
+    if (us.perfil_photo !== null) {
+      const getObjectParams = {
+        Bucket: bucketProfilePhoto,
+        Key: us.perfil_photo,
+      };
+      const command = new GetObjectCommand(getObjectParams);
+      url = await getSignedUrl(s3, command, { expiresIn: 3600 });
     }
 
-    let url = null
-    if(us.perfil_photo!==null){
-      const getObjectParams={
-        Bucket:bucketProfilePhoto, 
-        Key:us.perfil_photo
-      }
-      const command =  new GetObjectCommand(getObjectParams);
-     url =  await getSignedUrl(s3, command, { expiresIn: 3600 });
-    }
-   
     res.status(200).json({
-      _id:us._id,
-      name:us.name,
-      university:{name:university.name,_id:university._id},
-      email:us.email,
-      gender:us.gender,
-      birthday:us.birthday,
-      biography:us.biography,
-      role:us.role,
-      faculty:{_id:faculty._id,name:faculty.name},
-      city_of_birth:us.city_of_birth,
-      perfil_photo:url, 
-      idfavorite_subjects:us.idfavorite_subjects,
-      phone:us.phone
-    })
+      _id: us._id,
+      name: us.name,
+      university: { name: university.name, _id: university._id },
+      email: us.email,
+      gender: us.gender,
+      birthday: us.birthday,
+      biography: us.biography,
+      role: us.role,
+      faculty: { _id: faculty._id, name: faculty.name },
+      city_of_birth: us.city_of_birth,
+      perfil_photo: url,
+      idfavorite_subjects: subjects.map(s=>{return {_id:s._id,name:s.name}}),
+      phone: us.phone,
+    });
   } catch (error) {
-    res
-    .status(500)
-    .json({ succes: false, msg: "Error en servidor" });
+    res.status(500).json({ succes: false, msg: "Error en servidor" });
+  }
+};
+
+const updateUser = async (req, res) => {
+  try {
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "No se proporcionó un token" });
+    }
+
+    //Decodifico Token
+    const dataUserDecoded = getTokenData(token);
+    const mail = dataUserDecoded.data.email;
+    //Lo busco en BD
+    let user = (await User.findOne({ email: mail })) || null;
+
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataUserDecoded, user);
+
+    if (!validateInfo) {
+      return res.status(401).json({
+        success: false,
+        msg: "Token inválido",
+      });
+    }
+
+    const {
+      name,
+      iduniversity,
+      email,
+      password,
+      gender,
+      birthday,
+      biography,
+      idfaculty,
+      city_of_birth,
+      phone,
+    } = req.body;
+
+    const t = getUnexpiredToken({ email, password })
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const u =  (await User.findByIdAndUpdate(
+      { _id: user._id },
+      {
+        name,
+        iduniversity,
+        email,
+        hashedPassword,
+        gender,
+        birthday,
+        biography,
+        idfaculty,
+        city_of_birth,
+        phone,
+      },
+      { new: true }
+    )) || null;
+
+    if(u===null){
+      res.status(500).json({msg:"Error actualizando usuario"})
+    }
+
+    res.status(200).json({r:u,token:t});
+  } catch (error) {
+    res.status(500).json({ succes: false, msg: "Error en servidor" });
+  }
+};
+//TODO: CREAR UN MÉTODO PARA BORRAR USUARIO DE BASE DE DATOS EN CASO DE NO CONFIRMARSE LA CUENTA
+
+const addFavoriteSubjectAtList=async(req,res)=>{
+  try {
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "No se proporcionó un token" });
+    }
+
+    //Decodifico Token
+    const dataUserDecoded = getTokenData(token);
+    const mail = dataUserDecoded.data.email;
+    //Lo busco en BD
+    let user = (await User.findOne({ email: mail })) || null;
+
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataUserDecoded, user);
+
+    if (!validateInfo) {
+      return res.status(401).json({
+        success: false,
+        msg: "Token inválido",
+      });
+    }
+
+    const {idsubject}=req.query
+    const u =await User.updateOne({ _id: user._id }, { $addToSet: { idfavorite_subjects: idsubject } },{new:true})
+     
+    res.json(u)
+  } catch (error) {
+    res.status(500).json({ succes: false, msg: "Error en servidor" });
   }
 }
-//TODO: CREAR UN MÉTODO PARA BORRAR USUARIO DE BASE DE DATOS EN CASO DE NO CONFIRMARSE LA CUENTA
+
+const removeFavoriteSubjectFromList= async (req,res)=>{
+  try {
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "No se proporcionó un token" });
+    }
+
+    //Decodifico Token
+    const dataUserDecoded = getTokenData(token);
+    const mail = dataUserDecoded.data.email;
+    //Lo busco en BD
+    let user = (await User.findOne({ email: mail })) || null;
+
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataUserDecoded, user);
+
+    if (!validateInfo) {
+      return res.status(401).json({
+        success: false,
+        msg: "Token inválido",
+      });
+    }
+
+    const {idsubject}=req.query
+    await User.updateOne(
+      { _id: user._id },
+      { $pull: { idfavorite_subjects: idsubject } },
+      { new: true }
+)
+ res.status(200).json(user)
+  } catch (error) {
+    res.status(500).json({ succes: false, msg: "Error en servidor" });
+  }
+}
+
+const deleteUser= async (req,res)=>{
+  try {
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "No se proporcionó un token" });
+    }
+
+    //Decodifico Token
+    const dataUserDecoded = getTokenData(token);
+    const mail = dataUserDecoded.data.email;
+    //Lo busco en BD
+    let user = (await User.findOne({ email: mail })) || null;
+
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataUserDecoded, user);
+
+    if (!validateInfo) {
+      return res.status(401).json({
+        success: false,
+        msg: "Token inválido",
+      });
+    }
+    const u=await User.deleteOne({_id:user._id})
+    res.status(200).json(u)
+  } catch (error) {
+    res.status(500).json({ succes: false, msg: "Error en servidor" });
+  }
+}
 module.exports = {
   registerUser,
   confirm,
@@ -716,5 +883,9 @@ module.exports = {
   deleteCommentById,
   uploadProfilePhoto,
   deleteProfilePhoto,
-  getUserById
+  getUserById,
+  updateUser,
+  addFavoriteSubjectAtList,
+  removeFavoriteSubjectFromList,
+  deleteUser
 };
