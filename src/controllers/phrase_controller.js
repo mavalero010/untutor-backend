@@ -27,12 +27,12 @@ const getPhrase = async (req, res) => {
     }
 
     //Verifica que el user sea de rol student
-    if (user.role !== "student") {
+   /* if (user.role !== "student") {
       return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
-    }
+    }*/
     //Obtengo de los params el ID de Phrase
     const { idphrase } = req.query;
     let phrase = (await Phrase.findOne({ _id: idphrase })) || null;

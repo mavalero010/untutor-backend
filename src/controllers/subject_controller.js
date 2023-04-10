@@ -259,7 +259,6 @@ const updateSubject = async (req, res) => {
     const {
       name,
       credits,
-      url_background_image,
       description,
       difficulty_level,
       idfaculty,
@@ -271,7 +270,6 @@ const updateSubject = async (req, res) => {
         {
           name,
           credits,
-          url_background_image,
           description,
           difficulty_level,
           idfaculty,
