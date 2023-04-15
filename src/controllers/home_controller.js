@@ -203,7 +203,6 @@ const getBrowser = async (req, res) => {
          url =  await getSignedUrl(s3, command, { expiresIn: 3600 });
       }
       subList.push({
-        item:{
         _id:s.item._id,
         name:s.item.name,
         credits:s.item.credits,
@@ -216,7 +215,7 @@ const getBrowser = async (req, res) => {
         idsource_list:s.item.idsource_list,
         idcomment_list:s.item.idcomment_list,
         idstory_list:s.item.idstory_list
-      },
+      ,
       refIndex:s.refIndex,
       score:s.score
     })

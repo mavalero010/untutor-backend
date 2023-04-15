@@ -64,7 +64,7 @@ const registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     // Verificar que el usuario no exista
-    let user = (await User.findOne({ email })) || null;
+    let user = (await User.findOne({ email })) ;
     let unverifiedUser = (await UnverifiedUser.findOne({ email })) || null;
     if (user !== null) {
       return res.status(409).json({
@@ -247,11 +247,35 @@ const login = async (req, res) => {
 
     //Genera el token
     const token = getUnexpiredToken({ email, password });
+    let url = null;
+    if (user.perfil_photo !== null) {
+      const getObjectParams = {
+        Bucket: bucketProfilePhoto,
+        Key: user.perfil_photo,
+      };
+      const command = new GetObjectCommand(getObjectParams);
+      url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+    }
 
+    const university = await University.findOne({_id:user.iduniversity})
     //TODO: Buscar campos de seguridad extras para añadir al login, sea mensajes por SMS o autenticacion por huella digital
     return res.status(200).json({
       token,
-      user,
+      user:{
+        _id: user._id,
+        name: user.name,
+        university: { name: university.name, _id: university._id },
+        email: user.email,
+        gender: user.gender,
+        birthday: user.birthday,
+        biography: user.biography,
+        role: user.role,
+        faculty: user.idfaculty,
+        city_of_birth: user.city_of_birth,
+        perfil_photo: url,
+        idfavorite_subjects: user.idfavorite_subjects,
+        phone: user.phone,
+      },
     });
   } catch (error) {
     //TODO: Averiguar que status es el mas indicado

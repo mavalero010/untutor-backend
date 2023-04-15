@@ -28,7 +28,7 @@ const sendEmail = async (email, subject, html) => {
     });
   } catch (error) {
     res.status(500).json({
-      msg:"Erro en el servidor"
+      msg:"Error en el servidor"
     })
   }
 };

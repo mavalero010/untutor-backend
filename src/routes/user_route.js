@@ -16,13 +16,13 @@ routerUser.get(`/api/${process.env.VERSION_API}/user/home`, userController.home)
 routerUser.post(`/api/${process.env.VERSION_API}/user/register`, userController.registerUser)
 routerUser.post(`/api/${process.env.VERSION_API}/user/login`, userController.login)
 routerUser.post(`/api/${process.env.VERSION_API}/comment`,userController.addIdCommentAtList)
+routerUser.post(`/api/${process.env.VERSION_API}/user/add-favorite-subject`,userController.addFavoriteSubjectAtList) 
 
 routerUser.put(`/api/${process.env.VERSION_API}/profile_photo`,upload.single('profile_photo_user'),async(req,res)=>{
     const file = req.file
     userController.uploadProfilePhoto(req,res,file)
 }) 
 routerUser.put(`/api/${process.env.VERSION_API}/user`,userController.updateUser) 
-routerUser.put(`/api/${process.env.VERSION_API}/user/add-favorite-subject`,userController.addFavoriteSubjectAtList) 
 
 routerUser.delete(`/api/${process.env.VERSION_API}/comment`,userController.deleteCommentById) 
 routerUser.delete(`/api/${process.env.VERSION_API}/profile_photo`,userController.deleteProfilePhoto)
