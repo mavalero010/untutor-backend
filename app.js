@@ -10,6 +10,7 @@ const routerHome = require("./src/routes/home_route")
 const routerAdmin = require("./src/routes/admin_route")
 const routerSource = require("./src/routes/source_route")
 const routerTutory = require("./src/routes/tutory_route")
+const routerAvatar = require("./src/routes/avatar_route")
 
 connectDB();
 
@@ -24,7 +25,7 @@ app.get("/api", (req, res) => {
   res.send("API USER")
 });
 
-
+app.use(routerAvatar)
 app.use(routerUser)
 app.use(routerPhrase)
 app.use(routerSubject)

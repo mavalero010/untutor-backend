@@ -91,7 +91,7 @@ const getAllSubjects = async (req, res) => {
         description: s.description,
         url_background_image: url,
         difficulty_level: s.difficulty_level,
-        faculty: faculties.filter(f=> f.equals(s.idfaculty)).map(fa=>{return{_id:fa._id,name:fa.name}}),
+        faculty: faculties.filter(f=> f.equals(s.idfaculty)).map(fa=>{return{_id:fa._id,name:fa.name}})[0],
         tutors: tutors
           .filter((t) => s.idtutor_list.indexOf(t._id) !== -1)
           .map((tu) => {
@@ -102,7 +102,7 @@ const getAllSubjects = async (req, res) => {
 
     res.status(200).json({ results: subs, totalPages, page: parseInt(page) });
   } catch (error) {
-    res.status(500).json({ success: false, msg: "Error en controlador" });
+    res.status(500).json({ success: false, msg: "Error en servidor" });
   }
 };
 const getAllSubjectsByID_Faculty = async (req, res) => {
