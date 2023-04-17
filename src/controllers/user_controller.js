@@ -137,35 +137,26 @@ const confirm = async (req, res) => {
     const data = getTokenData(token);
 
     if (data === null) {
-      return res.status(401).json({
-        success: false,
-        msg: "Error al obtener data o token de confirmación expirado",
-      });
+      return res.status(401).redirect("/error.html");
     }
 
     const { email, password } = data.data;
     // Verificar no existencia del usuario
     const u = (await User.findOne({ email })) || null;
     if (u !== null) {
-      return res.status(409).json({
-        success: false,
-        msg: "Usuario ya existe",
-      });
+      return res.status(401).redirect("/confirm.html");
     }
 
     // Verificar existencia del usuario en base de datos no verificada
     const unv_user = (await UnverifiedUser.findOne({ email })) || null;
 
     if (unv_user === null) {
-      return res.status(404).json({
-        success: false,
-        msg: "Correo de cuenta no está en lista de espera por verificar",
-      });
+      return res.status(404).redirect("/error.html");
     }
 
     // Verificar contraseña
     if (password !== unv_user.password) {
-      return res.redirect("/error.html");
+      return res.status(401).redirect("/error.html");
     }
 
     // Actualizar usuario

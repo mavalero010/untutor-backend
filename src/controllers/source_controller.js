@@ -145,7 +145,6 @@ const getSourceById = async (req, res) => {
       const command = new GetObjectCommand(getObjectParams);
       url = await getSignedUrl(s3, command, { expiresIn: 3600 });
     }
-    console.log;
     res.json({
       _id: source._id,
       name: source.name,

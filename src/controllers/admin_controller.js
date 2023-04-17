@@ -142,10 +142,7 @@ const confirmAdmin = async (req, res) => {
     const data = getTokenData(token);
 
     if (data === null) {
-      return res.status(400).json({
-        success: false,
-        msg: "Error al obtener data o token de confirmación expirado",
-      });
+      return res.status(401).redirect("/error.html");
     }
 
     const { email, password } = data.data;
@@ -153,24 +150,18 @@ const confirmAdmin = async (req, res) => {
     // Verificar no existencia del usuario
     const a = (await Admin.findOne({ email })) || null;
     if (a !== null) {
-      return res.status(409).json({
-        success: false,
-        msg: "Administrador ya existe",
-      });
+      return res.status(401).redirect("/confirm.html");
     }
     // Verificar existencia del usuario en base de datos no verificada
     const unv_admin = (await UnverifiedAdmin.findOne({ email })) || null;
 
     if (unv_admin === null) {
-      return res.status(404).json({
-        success: false,
-        msg: "Correo de cuenta no está en lista de espera por verificar",
-      });
+      return res.status(404).redirect("/error.html");
     }
 
     // Verificar contraseña
     if (password !== unv_admin.password) {
-      return res.redirect("/error.html");
+      return res.status(401).redirect("/error.html");
     }
 
     //Actualizar admin

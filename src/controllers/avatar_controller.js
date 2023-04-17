@@ -55,7 +55,7 @@ const createAvatar = async (req,res,file)=>{
       });
     }
 
-   console.log("a")
+  
     const params = {
       Bucket: bucketProfilePhoto,
       Key: file.originalname,
