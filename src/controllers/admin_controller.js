@@ -1,5 +1,7 @@
 const Admin = require("../models/admin_model");
 const User = require("../models/user_model");
+const Subject=require("../models/subject_model")
+const Comment =require("../models/comment_model")
 const UnverifiedAdmin = require("../models/unverified_admin_model");
 const bcrypt = require("bcrypt");
 const {
@@ -285,9 +287,122 @@ try {
   res.status(500).json({ msg: "Error en servidor " });
 }
 }
+
+const deleteComment=async(req,res)=>{
+  try {
+        // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({ message: "No se proporcionó un token" });
+    }
+
+    //Decodifico Token
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    //Lo busco en BD
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+
+    if (!validateInfo) {
+      return res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    const { target, idcomment, idtarget } = req.query;
+    let validateTarget = false;
+    let result = []    
+    const c =(await Comment.findOne({ _id: idcomment})) || null;
+   
+    if (c === null) {
+      return res.status(401).json({
+        msg: "Sin autorización para borrar",
+      });
+    }
+    if (target === "subject") {
+
+      await Subject.updateOne(
+        { _id: idtarget },
+        { $pull: { idcomment_list: idcomment } }
+      )
+        .then((data) => result.push(data))
+        .catch((err) => {
+          return res.status(400).json({
+            success: false,
+            msg: "Error eliminando comentario de lista en Subject",
+          });
+        });
+        console.log("aca")
+      await Comment.deleteOne({ _id: idcomment })
+        .then((data) => result.push(data))
+        .catch((err) => {
+          return res
+            .status(400)
+            .json({ success: false, msg: "Error eliminando comentario" });
+        });
+      validateTarget = true;
+    }
+    if (target === "source") {
+      await Source.updateOne(
+        { _id: idtarget },
+        { $pull: { idcomment_list: idcomment } }
+      )
+        .then((data) => result.push(data))
+        .catch((err) => {
+          return res.status(400).json({
+            success: false,
+            msg: "Error eliminando comentario de lista en Source",
+          });
+        });
+      await Comment.deleteOne({ _id: idcomment })
+        .then((data) => result.push(data))
+        .catch((err) => {
+          return res
+            .status(400)
+            .json({ success: false, msg: "Error eliminando comentario" });
+        });
+      validateTarget = true;
+    }
+
+    if (target === "story") {
+      await Story.updateOne(
+        { _id: idtarget },
+        { $pull: { idcomment_list: idcomment } }
+      )
+        .then((data) => result.push(data))
+        .catch((err) => {
+          return res.status(400).json({
+            success: false,
+            msg: "Error eliminando comentario de lista en Source",
+          });
+        });
+      await Comment.deleteOne({ _id: idcomment })
+        .then((data) => result.push(data))
+        .catch((err) => {
+          return res
+            .status(400)
+            .json({ success: false, msg: "Error eliminando comentario" });
+        });
+      validateTarget = true;
+    }
+    if (!validateTarget) {
+      return res
+        .status(400)
+        .json({ success: true, msg: "introduzca un target correcto" });
+    }
+
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ msg: "Error en servidor " });
+
+  }
+}
 module.exports = {
   registerAdmin,
   loginAdmin,
   confirmAdmin,
-  createTutor
+  createTutor,
+  deleteComment
 };

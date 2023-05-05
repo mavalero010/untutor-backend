@@ -11,6 +11,7 @@ const routerAdmin = require("./src/routes/admin_route")
 const routerSource = require("./src/routes/source_route")
 const routerTutory = require("./src/routes/tutory_route")
 const routerAvatar = require("./src/routes/avatar_route")
+const routerBlog = require("./src/routes/blog_route")
 
 connectDB();
 
@@ -35,6 +36,7 @@ app.use(routerHome)
 app.use(routerAdmin)
 app.use(routerSource)
 app.use(routerTutory)
+app.use(routerBlog)
 
 app.listen(process.env.PORT, () => {
   console.log(`Example app listening on port ${process.env.PORT}`);

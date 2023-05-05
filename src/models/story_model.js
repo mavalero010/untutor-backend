@@ -12,7 +12,8 @@ const storySchema = new mongoose.Schema(
         type: mongoose.Schema.ObjectId,
         ref: 'Comment',
       },
-    ],
+    ]
+   // ,createdAt: { type: Date, expires: "24h", default: Date.now }
   },
   {
     versionKey: false,
