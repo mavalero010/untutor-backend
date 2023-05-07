@@ -61,12 +61,12 @@ const getHome = async (req, res) => {
     }
 
     //Verifica que el user sea de rol student
-   /* if (user.role !== "student") {
+   if (user.role !== "student") {
       return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
-    }*/
+    }
 
     //Obtengo frases aleatorias de la DB en mongo
     const phrase =
@@ -162,12 +162,12 @@ const getBrowser = async (req, res) => {
     }
 
     //Verifica que el user sea de rol student
-   /* if (user.role !== "student") {
+   if (user.role !== "student") {
       return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
-    }*/
+    }
 
     //Obtengo el filtro para saber en que base de datos buscar, sea User, Subject, Source, Event etc
     const { filter,page, limit} = req.query;

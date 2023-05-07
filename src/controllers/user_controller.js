@@ -80,13 +80,13 @@ const registerUser = async (req, res) => {
       });
     }
 
-    /*if (role !== "student") {
+    if (role !== "student") {
       return res.status(401).json({
         success: false,
         msg: "Válido solo para cuentas de rol student",
       });
     }
-*/
+
     // Crear un nuevo usuario
     password = hashedPassword;
     unv_user = new UnverifiedUser({
@@ -235,7 +235,12 @@ const login = async (req, res) => {
         msg: "Usuario inhabilitado",
       });
     }
-
+    if (user.role!=="student") {
+      return res.status(401).json({
+        success: false,
+        msg: "Usario no es tipo estudiante",
+      });
+    }
     //Genera el token
     const token = getUnexpiredToken({ email, password });
     let url = null;
@@ -343,13 +348,13 @@ const addIdCommentAtList = async (req, res) => {
     }
 
     //Verifica que el user sea de rol student
-    /*if (user.role !== "student") {
+    if (user.role !== "student") {
       return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
     }
-*/
+
     //Obtengo el target para saber en que base de datos buscar, sea Story, Source, Subject
     const { target } = req.query;
     const { comment, idauthor, idtarget } = req.body;
@@ -421,12 +426,12 @@ const deleteCommentById = async (req, res) => {
     }
 
     //Verifica que el user sea de rol student
-    /*if (user.role !== "student") {
+    if (user.role !== "student") {
       return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
-    }*/
+    }
     //Obtengo el target y el idcomment para saber en que base de datos buscar y eliminar, sea Story, Source, Subject
     const { target, idcomment, idtarget } = req.query;
     let validateTarget = false;
@@ -568,12 +573,12 @@ const uploadProfilePhoto = async (req, res, file) => {
     }
 
     //Verifica que el user sea de rol student
-    /*if (user.role !== "student") {
+    if (user.role !== "student") {
       return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
-    }*/
+    }
 
     const buffer = await sharp(file.buffer)
       .resize({ height: 1920, width: 1080, fit: "contain" })
@@ -623,12 +628,12 @@ const deleteProfilePhoto = async (req, res) => {
     }
 
     //Verifica que el user sea de rol student
-    /* if (user.role !== "student") {
+    if (user.role !== "student") {
       return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
-    }*/
+    }
 
     if (user.perfil_photo === null) {
       return res.status(401).json({

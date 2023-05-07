@@ -126,12 +126,12 @@ const getSourceById = async (req, res) => {
     }
 
     //Verifica que el user sea de rol student
-    /*if (user.role !== "student") {
+    if (user.role !== "student") {
       return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
-    }*/
+    }
 
     const { idsource } = req.query;
 
