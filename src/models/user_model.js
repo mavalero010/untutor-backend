@@ -36,6 +36,7 @@ const userSchema = new mongoose.Schema(
       },
     ],
     phone: { type: String },
+    device_token:{type:String, default:null}
   },
   {
     versionKey: false,

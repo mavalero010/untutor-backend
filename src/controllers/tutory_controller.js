@@ -7,7 +7,7 @@ const { getAnalytics } = require("firebase/analytics");
 const dotenv = require("dotenv");
 const admin = require('firebase-admin');
 const serviceAccount = require('../../untutor-notifications-firebase-adminsdk-xmbpo-01e725a99a.json');
-    
+const crons = []
 dotenv.config();
 const cron = require('node-cron');
 const firebaseConfig = {
@@ -27,7 +27,10 @@ const {
 } = require("../config/jwt.config");
 
 
-
+function getNumberDayWeek(date) {
+  const day = new Date(date).getDay();
+  return day === 0 ? 7 : day; // para ajustar la numeración del domingo de 0 a 7
+}
 const createTutory = async (req, res) => {
   try {
     /* // Inicializando Firebase
@@ -205,40 +208,16 @@ try {
       { new: true } // Devuelve el registro actualizado
     );
 
-    const date_start=updatedTutory.date_start.split(" ")[0]
-    const hour_start=updatedTutory.date_start.split(" ")[1]
-    const year=parseInt(date_start.split("-")[0])
-    const month=parseInt(date_start.split("-")[1])
-    const day=parseInt(date_start.split("-")[2])
-    const hour=parseInt(hour_start.split(":")[0])
-    const minute=parseInt(hour_start.split(":")[1])
-    const days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const d = new Date(date_start);
-    const dayNumber = d.getDay();
-    const message = {
-      data:{ruta:"tutory",id:idtutory},
-      notification: {
-        title: `¡Recordatorio de tutoría de ${updatedTutory.name}!`,
-        body: `Tutoría de ${updatedTutory.name} empieza en 1 hora`
-      },
-      token:device_token
-    };
-    //recordar cada semana
-    cron.schedule(`0 ${minute} ${hour-1} ${day},${day+7} ${month},${month+1} *`, () => { 
-      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-          // Enviar el mensaje a través de FCM
-      admin.messaging().send(message)
-    .then((response) => {
-      console.log("Enviado") 
-    })
-    .catch((error) => {
-      console.log("No enviado: ",error)
-    });
+    await User.findOneAndUpdate(
+      { _id: user._id },
+      {device_token}, // El operador $addToSet agrega el estudiante solo si no existe aún
+      { new: true } // Devuelve el registro actualizado
+    );
+    if(updatedTutory.idstudent_list.length===1){
+     
+      createProcess(updatedTutory)
       
-    }, {
-      scheduled: true,
-      timezone: "America/Bogota"
-    });
+    }
     res.json(updatedTutory)
 
 
@@ -288,12 +267,64 @@ const removeStudentAtListTutory=async(req,res)=>{
       { $pull: { idstudent_list: user._id } },
       { new: true }
     ).catch(err=>{return res.status(500).json({msg:""})});
-
+    console.log(tutory.idstudent_list.length)
+    if(tutory.idstudent_list.length == 0 ){
+     const t= crons.find(c=>c.id===tutory._id)
+     t.stop()
+    }
       res.status(200).json(tutory)
 
   } catch (error) {
     res.status(500).json({ success: false, msg:"Error en el servidor" })
   }
+}
+
+const createProcess = async(tutory) =>{
+
+  const date_start=tutory.date_start.split(" ")[0]
+  const date_end=tutory.date_end.split(" ")[0]
+  const hour_start=tutory.date_start.split(" ")[1]
+  const month=parseInt(date_start.split("-")[1])
+  const month_end=parseInt(date_end.split("-")[1])
+  //const day=parseInt(date_start.split("-")[2])
+  const hour=parseInt(hour_start.split(":")[0])
+  const minute=parseInt(hour_start.split(":")[1])
+  const d = getNumberDayWeek(date_start)
+  const device_tokens=[]
+  const idstudent_list = tutory.idstudent_list
+  for(let i = 0; i<idstudent_list.length;i++){
+    const t = (await User.findOne({_id:idstudent_list[i]})).device_token
+    device_tokens.push(t)
+  }
+  
+  //recordar cada semana
+  const task=cron.schedule(`0 ${minute} ${hour-1} * ${month}-${month_end} ${d+1}`, () => { 
+    
+    for(let i=0;i<device_tokens.length;i++){
+      
+      const message = {
+        data:{ruta:"tutory",id:tutory._id.toString()},
+        notification: {
+          title: `¡Recordatorio de tutoría de ${tutory.name}!`,
+          body: `Tutoría de ${tutory.name} empieza en 1 hora`
+        },
+        token:device_tokens[i].toString()
+      }
+      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+          // Enviar el mensaje a través de FCM
+      admin.messaging().send(message).then((response) => {
+      console.log("Enviado") 
+    }).catch((error) => {
+      console.log("No enviado: ",error)
+    });
+    }
+    
+  }, {
+    scheduled: true,
+    timezone: "America/Bogota"
+  });
+
+  crons.push({id:tutory._id.toString(),task})
 }
 module.exports = {
   createTutory,
