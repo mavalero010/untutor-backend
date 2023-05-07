@@ -5,6 +5,7 @@ const Admin = require("../models/admin_model");
 const Faculty = require("../models/faculty_model");
 const Comment = require("../models/comment_model");
 const Story = require("../models/story_model");
+const ObjectId = require('mongodb').ObjectId;
 const { getTokenData, authTokenDecoded } = require("../config/jwt.config");
 
 const multer = require("multer");
@@ -513,7 +514,12 @@ const getSubjectById = async (req, res) => {
     let comments = await Comment.find({ idtarget: idsubject });
     let authors = await User.find({ role: "student" });
     let sources= await Source.find({idsubject})
-
+    let isfavorite=false
+    user.idfavorite_subjects.forEach(element => {
+      if(element.toString()==idsubject){
+        isfavorite=true
+      }
+    });
 
     if (subject.url_background_image !== null) {
       const getObjectParams = {
@@ -556,14 +562,15 @@ const getSubjectById = async (req, res) => {
             }),
         };
       }),
-      sources:sources.map(s=>{return {name:s.name,url:s.url_file}})
+      sources:sources.map(s=>{return {name:s.name,url:s.url_file}}),
+      isfavorite
     };
 
     res.json(s);
   } catch (error) {
     res.status(500).json({
       succes: false,
-      msg: "Error en controlador uploadBackgroundImageSubject",
+      msg: "Error en servidor",
     });
   }
 };
