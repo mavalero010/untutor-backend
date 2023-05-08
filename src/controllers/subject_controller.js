@@ -513,6 +513,64 @@ const getSubjectById = async (req, res) => {
     let faculty = await Faculty.findOne({ _id: subject.idfaculty });
     let comments = await Comment.find({ idtarget: idsubject });
     let authors = await User.find({ role: "student" });
+      let comms=[]
+      let tam=0
+      if(comments.length-4<0){
+          tam=0
+      }else{
+        tam = comments.length-4
+      }
+    for(let co = tam;co<comments.length;co++){
+      
+      let au = {}
+      for(let i = 0;i<authors.length;i++){
+        let url = null
+        if (authors[i].perfil_photo !== null) {
+          const getObjectParams = {
+            Bucket: bucketProfilePhoto,
+            Key: authors[i].perfil_photo,
+          };
+    
+          const command = new GetObjectCommand(getObjectParams);
+           url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+        
+        }
+        if(authors[i]._id.equals(comments[co].idauthor)){
+         
+          au={_id: authors[i]._id,
+            name: authors[i].name,
+            perfil_photo: url}
+          
+        }
+      }
+      comms.push({
+        _id: comments[co]._id,
+        comment: comments[co].comment,
+        author:au
+      })
+    }
+    /*stories.map((s) => {
+        return { _id: s._id, name: s.name, multimedia: s.multimedia };
+      }),*/
+      let tamS=0
+      let ss=[]
+      if(stories.length-4<0){
+        tamS=0
+      }else{
+        tamS = stories.length-4
+      }
+      for(let i=0;i<stories.length;i++){
+        let urlS=null
+        if (stories[i].multimedia !== null) {
+          const getObjectParams = {
+            Bucket: bucketProfilePhoto,
+            Key: stories[i].multimedia,
+          };
+          const command = new GetObjectCommand(getObjectParams);
+          urlS = await getSignedUrl(s3, command, { expiresIn: 3600 });
+          }
+          ss.push({_id: stories[i]._id, name: stories[i].name, multimedia: urlS})
+      }
     let sources= await Source.find({idsubject})
     let isfavorite=false
     user.idfavorite_subjects.forEach(element => {
@@ -544,25 +602,9 @@ const getSubjectById = async (req, res) => {
         .map((tu) => {
           return { _id: tu._id, name: tu.name };
         }),
-      stories: stories.map((s) => {
-        return { _id: s._id, name: s.name, multimedia: s.multimedia };
-      }),
-      comments: comments.map((c) => {
-        return {
-          _id: c._id,
-          comment: c.comment,
-          author: authors
-            .filter((a) => a._id.equals(c.idauthor))
-            .map((au) => {
-              return {
-                _id: au._id,
-                name: au.name,
-                perfil_photo: au.perfil_photo,
-              };
-            }),
-        };
-      }),
-      sources:sources.map(s=>{return {name:s.name,url:s.url_file}}),
+      stories:ss,
+      comments: comms,
+      sources:sources.map(s=>{return {name:s.name,url:s.url_file}}).length,
       isfavorite
     };
 
