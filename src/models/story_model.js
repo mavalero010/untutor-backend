@@ -7,7 +7,7 @@ const storySchema = new mongoose.Schema(
     multimedia: { type: String, require: true },
     idsubject:{type: mongoose.Schema.ObjectId,
       ref: 'Subject',},//TODO:Especificar tipo de dato
-      idcomment_list: [
+    idcomment_list: [
       {
         type: mongoose.Schema.ObjectId,
         ref: 'Comment',

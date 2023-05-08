@@ -17,6 +17,10 @@ routerUser.post(`/api/${process.env.VERSION_API}/user/register`, userController.
 routerUser.post(`/api/${process.env.VERSION_API}/user/login`, userController.login)
 routerUser.post(`/api/${process.env.VERSION_API}/comment`,userController.addIdCommentAtList)
 routerUser.post(`/api/${process.env.VERSION_API}/user/add-favorite-subject`,userController.addFavoriteSubjectAtList) 
+routerUser.post(`/api/${process.env.VERSION_API}/user/story`,upload.single('story_multimedia'),async(req,res)=>{
+    const file = req.file
+    userController.createStory(req,res,file)
+}) 
 
 routerUser.put(`/api/${process.env.VERSION_API}/profile_photo`,upload.single('profile_photo_user'),async(req,res)=>{
     const file = req.file

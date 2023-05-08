@@ -29,6 +29,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 const saltRounds = parseInt(process.env.SALT_ROUNDS_ENCRYPT_PASSWORD);
 const bucketProfilePhoto = process.env.BUCKET_PROFILE_PHOTO;
+const bucketSource=process.env.BUCKET_SOURCE_UNTUTOR
 const bucketRegion = process.env.BUCKET_REGION;
 const accessKey = process.env.AWS_ACCESS_KEY;
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
@@ -580,9 +581,6 @@ const uploadProfilePhoto = async (req, res, file) => {
       });
     }
 
-    const buffer = await sharp(file.buffer)
-      .resize({ height: 1920, width: 1080, fit: "contain" })
-      .toBuffer();
     const imageName = await bcrypt.hash(file.originalname, saltRounds);
     const params = {
       Bucket: bucketProfilePhoto,
@@ -894,6 +892,60 @@ const deleteUser= async (req,res)=>{
     res.status(500).json({ succes: false, msg: "Error en servidor" });
   }
 }
+
+const createStory=async(req,res,file)=>{
+  try {
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({ message: "No se proporcionó un token" });
+    }
+
+    //Decodifico Token
+    const dataUserDecoded = getTokenData(token);
+    const mail = dataUserDecoded.data.email;
+    //Lo busco en BD
+    let user = (await User.findOne({ email: mail })) || null;
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataUserDecoded, user);
+
+    if (!validateInfo) {
+      return res.status(401).json({
+        success: false,
+        msg: "Usuario no existe, token inválido",
+      });
+    }
+    //Verifica que el user sea de rol student
+    if (user.role !== "student") {
+      return res.status(401).json({
+        success: false,
+        msg: "Válido solo para rol student",
+      });
+    }
+    const {name,idsubject}=req.body
+    const imageName = await bcrypt.hash(file.originalname, saltRounds);
+    const params = {
+      Bucket: bucketSource,
+      Key: imageName,
+      Body: file.buffer, //buffer
+      ContentType: file.mimetype,
+    };
+    const command = new PutObjectCommand(params);
+    await s3.send(command);
+    const story = new Story({name:name,iduser:user._id,multimedia:imageName,idsubject:idsubject,idcomment_list:null})
+    await story.save()
+
+    const su=await Subject.findOneAndUpdate(
+      { _id: idsubject },
+      { $addToSet: { idstory_list: story._id } }, // El operador $addToSet agrega el estudiante solo si no existe aún
+      { new: true } // Devuelve el registro actualizado
+    );
+    res.status(200).json({story,subject:su})
+  } catch (error) {
+    res.status(500).json({ succes: false, msg: "Error en servidor" });
+  }
+}
 module.exports = {
   registerUser,
   confirm,
@@ -907,5 +959,6 @@ module.exports = {
   updateUser,
   addFavoriteSubjectAtList,
   removeFavoriteSubjectFromList,
-  deleteUser
+  deleteUser,
+  createStory
 };

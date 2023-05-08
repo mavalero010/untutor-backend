@@ -23,6 +23,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 const saltRounds = parseInt(process.env.SALT_ROUNDS_ENCRYPT_PASSWORD);
 const bucketProfilePhoto = process.env.BUCKET_PROFILE_PHOTO;
+const bucketSource=process.env.BUCKET_SOURCE_UNTUTOR
 const bucketRegion = process.env.BUCKET_REGION;
 const accessKey = process.env.AWS_ACCESS_KEY;
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
@@ -508,6 +509,7 @@ const getSubjectById = async (req, res) => {
     if (subject === null) {
       return res.status(404).json({ msg: "Subject no existe" });
     }
+    let favorites=await User.find({idfavorite_subjects: { $elemMatch: { $eq: idsubject } }})
     let tutors = await User.find({ role: "tutor" });
     let stories = await Story.find({ idsubject });
     let faculty = await Faculty.findOne({ _id: subject.idfaculty });
@@ -560,11 +562,11 @@ const getSubjectById = async (req, res) => {
       }else{
         tamS = stories.length-4
       }
-      for(let i=0;i<stories.length;i++){
+      for(let i=tamS;i<stories.length;i++){
         let urlS=null
         if (stories[i].multimedia !== null) {
           const getObjectParams = {
-            Bucket: bucketProfilePhoto,
+            Bucket: bucketSource,
             Key: stories[i].multimedia,
           };
           const command = new GetObjectCommand(getObjectParams);
@@ -606,7 +608,8 @@ const getSubjectById = async (req, res) => {
       stories:ss,
       comments: comms,
       sources:sources.map(s=>{return {name:s.name,url:s.url_file}}).length,
-      isfavorite
+      isfavorite,
+      likes:favorites.length
     };
 
     res.json(s);
