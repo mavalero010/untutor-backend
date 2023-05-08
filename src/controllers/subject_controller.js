@@ -546,7 +546,8 @@ const getSubjectById = async (req, res) => {
       comms.push({
         _id: comments[co]._id,
         comment: comments[co].comment,
-        author:au
+        author:au,
+        date:comments[co].date
       })
     }
     /*stories.map((s) => {
