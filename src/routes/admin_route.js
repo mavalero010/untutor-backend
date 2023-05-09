@@ -11,6 +11,5 @@ routerAdmin.post(`/api/${process.env.VERSION_API}/admin/login`, adminController.
 routerAdmin.post(`/api/${process.env.VERSION_API}/admin/tutor`, adminController.createTutor)
 routerAdmin.delete(`/api/${process.env.VERSION_API}/admin/comment`, adminController.deleteComment)
 
-//TODO:Crear ruta de Logout donde el token expire forzosamente
 
 module.exports = routerAdmin;

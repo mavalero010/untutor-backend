@@ -564,6 +564,7 @@ const getSubjectById = async (req, res) => {
       }
       for(let i=tamS;i<stories.length;i++){
         let urlS=null
+        
         if (stories[i].multimedia !== null) {
           const getObjectParams = {
             Bucket: bucketSource,
@@ -572,7 +573,19 @@ const getSubjectById = async (req, res) => {
           const command = new GetObjectCommand(getObjectParams);
           urlS = await getSignedUrl(s3, command, { expiresIn: 3600 });
           }
-          ss.push({_id: stories[i]._id, name: stories[i].name, multimedia: urlS})
+          let urlProfilePhotoUser=null
+          const ustemp = await User.findOne({_id:stories[i].iduser})
+          if (ustemp.perfil_photo !== null) {
+            const getObjectParams = {
+              Bucket: bucketProfilePhoto,
+              Key: ustemp.perfil_photo,
+            };
+      
+            const command = new GetObjectCommand(getObjectParams);
+            urlProfilePhotoUser = await getSignedUrl(s3, command, { expiresIn: 3600 });
+          
+          }
+          ss.push({_id: stories[i]._id, message: stories[i].name, multimedia: urlS, author:{perfil_photo:urlProfilePhotoUser,name:ustemp.name}})
       }
     let sources= await Source.find({idsubject})
     let isfavorite=false

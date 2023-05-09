@@ -941,7 +941,7 @@ const createStory=async(req,res,file)=>{
       { $addToSet: { idstory_list: story._id } }, // El operador $addToSet agrega el estudiante solo si no existe aún
       { new: true } // Devuelve el registro actualizado
     );
-    res.status(200).json({story,subject:su})
+    res.status(200).json({story})
   } catch (error) {
     res.status(500).json({ succes: false, msg: "Error en servidor" });
   }
