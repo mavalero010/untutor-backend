@@ -172,7 +172,8 @@ const getWeeklySchedule = async (req, res) => {
             start: e.date_start.split(" ")[1],
             end: e.date_end.split(" ")[1],
             available: e.available,
-            _id:e._id
+            _id:e._id,
+            duration:e.duration.split(" ")[0]
           };
         });
       t.push({ date: d, tutories: tu });
@@ -324,6 +325,55 @@ const removeStudentAtListTutory = async (req, res) => {
   }
 };
 
+const getTutoryById =async(req,res)=>{
+  try {
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "No se proporcionó un token" });
+    }
+
+    //Decodifico Token
+    const dataUserDecoded = getTokenData(token);
+    const mail = dataUserDecoded.data.email;
+    //Lo busco en BD
+    let user = (await User.findOne({ email: mail })) || null;
+
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataUserDecoded, user);
+
+    if (!validateInfo) {
+      return res.status(401).json({
+        success: false,
+        msg: "Usuario no existe o contraseña inválida",
+      });
+    }
+
+    //Verifica que el user sea de rol student
+    if (user.role !== "student") {
+      return res.status(401).json({
+        success: false,
+        msg: "Válido solo para rol student",
+      });
+    }
+    const {idtutory}=req.query
+
+    const tutory = await Tutory.findOne({_id:idtutory}) || null
+
+    if(tutory ===null){
+      return res.status(404).json({msg:"Tutoría no existe"})
+    }
+
+    const tutor = await User.findOne({_id:tutory.idtutor})
+
+    
+    res.json(tutory)
+  } catch (error) {
+    res.status(500).json({ success: false, msg: "Error en el servidor" });
+  }
+}
+
 const createProcess = async (tutory) => {
   const date_start = tutory.date_start.split(" ")[0];
   const date_end = tutory.date_end.split(" ")[0];
@@ -383,4 +433,5 @@ module.exports = {
   sendNotificationsAboutTutory,
   addStudentAtListTutory,
   removeStudentAtListTutory,
+  getTutoryById
 };
