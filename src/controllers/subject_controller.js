@@ -585,7 +585,7 @@ const getSubjectById = async (req, res) => {
             urlProfilePhotoUser = await getSignedUrl(s3, command, { expiresIn: 3600 });
           
           }
-          ss.push({_id: stories[i]._id, message: stories[i].name, multimedia: urlS, author:{perfil_photo:urlProfilePhotoUser,name:ustemp.name}})
+          ss.push({_id: stories[i]._id, message: stories[i].name, multimedia: urlS, author:{_id:ustemp._id,perfil_photo:urlProfilePhotoUser,name:ustemp.name}})
       }
     let sources= await Source.find({idsubject})
     let isfavorite=false

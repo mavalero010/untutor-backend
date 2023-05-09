@@ -71,7 +71,6 @@ try {
 
     const us = await User.findOne({_id:story.iduser})
     let url = null
-    console.log(story.multimedia )
     if (story.multimedia !== null) {
       const getObjectParams = {
         Bucket: bucketSource,
@@ -95,7 +94,7 @@ try {
       urlProfilePhotoUser = await getSignedUrl(s3, command, { expiresIn: 3600 });
     
     }
-    res.status(200).json({_id:story.id,message:story.name,multimedia:story.multimedia,author:{name:us.name,perfil_photo:urlProfilePhotoUser}})
+    res.status(200).json({_id:story.id,message:story.name,multimedia:story.multimedia,author:{_id:us._id,name:us.name,perfil_photo:urlProfilePhotoUser}})
 
 } catch (error) {
     res.status(500).json({
