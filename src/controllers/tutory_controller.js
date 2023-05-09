@@ -3,14 +3,14 @@ const Tutory = require("../models/tutory_model");
 const Admin = require("../models/admin_model");
 const Subject = require("../models/subject_model");
 const firebase = require("firebase/app");
-const moment = require('moment');
+const moment = require("moment");
 const { getAnalytics } = require("firebase/analytics");
 const dotenv = require("dotenv");
-const admin = require('firebase-admin');
-const serviceAccount = require('../../untutor-notifications-firebase-adminsdk-xmbpo-01e725a99a.json');
-const crons = []
+const admin = require("firebase-admin");
+const serviceAccount = require("../../untutor-notifications-firebase-adminsdk-xmbpo-01e725a99a.json");
+const crons = [];
 dotenv.config();
-const cron = require('node-cron');
+const cron = require("node-cron");
 const firebaseConfig = {
   apiKey: process.env.APIKEY,
   authDomain: process.env.AUTHDOMAIN,
@@ -26,7 +26,6 @@ const {
   authTokenDecoded,
   getUnexpiredToken,
 } = require("../config/jwt.config");
-
 
 function getNumberDayWeek(date) {
   const day = new Date(date).getDay();
@@ -93,7 +92,7 @@ const createTutory = async (req, res) => {
       duration,
       location,
       isVirtual,
-      available, 
+      available,
     });
 
     await tutory.save().then((data) =>
@@ -107,20 +106,20 @@ const createTutory = async (req, res) => {
     res.status(500).json({ succes: false, msg: "Error en servidor" });
   }
 };
-function generateDatesBetween(fechaInicial, fechaFinal) {
-  const fechas = [];
+function generateDatesBetween(initDate, finalDate) {
+  const dates = [];
 
-  let fechaActual = moment(fechaInicial);
-  while (fechaActual <= moment(fechaFinal)) {
-    fechas.push(fechaActual.format('YYYY-MM-DD'));
-    fechaActual.add(1, 'days');
+  let dateNow = moment(initDate);
+  while (dateNow <= moment(finalDate)) {
+    dates.push(dateNow.format("YYYY-MM-DD"));
+    dateNow.add(1, "days");
   }
 
-  return fechas;
+  return dates;
 }
 const getWeeklySchedule = async (req, res) => {
   try {
-     // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
     // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
     const token = req.headers.authorization.split(" ")[1];
     if (!token) {
@@ -150,27 +149,33 @@ const getWeeklySchedule = async (req, res) => {
         msg: "Válido solo para rol student",
       });
     }
-    const { idsubject,date_start,date_end } = req.query;
+    const { idsubject, date_start, date_end } = req.query;
     const tutories = await Tutory.find({ idsubject });
     let t = [];
-    const year=parseInt(date_start.split("-"[0]))
-    const month_start=parseInt(date_start.split("-")[1])
-    const month_end=parseInt(date_end.split("-")[1])
-    const day_start=parseInt(date_start.split("-")[2])
-    const day_end=parseInt(date_end.split("-")[2])
-    
-    const days = generateDatesBetween(date_start,date_end); 
+    /*const diffTime = Math.abs(dateStartDate - todayDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+*/
+    const days = generateDatesBetween(date_start, date_end);
     days.forEach((d) => {
+      
       let tu = tutories
-        .filter((t) => t.date_start.split(" ")[0] === d)
+        .filter(
+          (t) =>
+
+            new Date(t.date_start.split(" ")[0]) <= new Date(d) &&
+            new Date(t.date_end.split(" ")[0]) >= new Date(d) &&
+            Math.abs(new Date(d).getTime() - new Date(t.date_start.split(" ")[0]).getTime()) %
+              7 === 0
+        )
         .map((e) => {
           return {
             start: e.date_start.split(" ")[1],
             end: e.date_end.split(" ")[1],
-            available:e.available
+            available: e.available,
+            _id:e._id
           };
         });
-      t.push({date: d,tutories:tu});
+      t.push({ date: d, tutories: tu });
     });
     res.json(t);
   } catch (error) {
@@ -178,39 +183,39 @@ const getWeeklySchedule = async (req, res) => {
   }
 };
 
-const sendNotificationsAboutTutory=async(req,res)=>{
+const sendNotificationsAboutTutory = async (req, res) => {
   try {
-
     admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-    
+
     // Construir el mensaje a enviar
     const message = {
-      data:{ruta:"tutory",id:"d"},
+      data: { ruta: "tutory", id: "d" },
       notification: {
-        title: 'Mi título de prueba 3',
-        body: 'Este es el cuerpo de mi mensaje de prueba.'
+        title: "Mi título de prueba 3",
+        body: "Este es el cuerpo de mi mensaje de prueba.",
       },
-      token: 'cz7icM5DRaKU1eYnxJFWwT:APA91bG4TTS3nZiWtSBBhhWRUF1GbUFceKerT7rEWViuGLybpCZqIbO_hllBDdj32FAvckKMUeVu8GGHe5b4Z8Q2gjd7dsUPzbM79R3o7-Pi-Rp_V9mbTFyTQV4kXPqXME_SZqf8tZKl'
+      token:
+        "cz7icM5DRaKU1eYnxJFWwT:APA91bG4TTS3nZiWtSBBhhWRUF1GbUFceKerT7rEWViuGLybpCZqIbO_hllBDdj32FAvckKMUeVu8GGHe5b4Z8Q2gjd7dsUPzbM79R3o7-Pi-Rp_V9mbTFyTQV4kXPqXME_SZqf8tZKl",
     };
-    
+
     // Enviar el mensaje a través de FCM
-    admin.messaging().send(message)
+    admin
+      .messaging()
+      .send(message)
       .then((response) => {
-        return res.json({msg:'Mensaje enviado:', response})
+        return res.json({ msg: "Mensaje enviado:", response });
       })
       .catch((error) => {
-       return  res.json({msg:'Error enviando el mensaje:', error})
+        return res.json({ msg: "Error enviando el mensaje:", error });
       });
-
-    
   } catch (error) {
-    res.status(500).json({ success: false, msg:"Error en el servidor" });
+    res.status(500).json({ success: false, msg: "Error en el servidor" });
   }
-}
+};
 
-const addStudentAtListTutory=async(req,res)=>{
-try {
-     // Aquí se verificaría si el token JWT enviado por el cliente es válido
+const addStudentAtListTutory = async (req, res) => {
+  try {
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
     // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
     const token = req.headers.authorization.split(" ")[1];
     if (!token) {
@@ -241,11 +246,11 @@ try {
       });
     }
 
-    const {idtutory}=req.query
-    const {device_token}=req.body
+    const { idtutory } = req.query;
+    const { device_token } = req.body;
     const tutory = await Tutory.findById(idtutory);
     if (!tutory) {
-      return res.status(404).json({msg:"No se encontró tutoría"});
+      return res.status(404).json({ msg: "No se encontró tutoría" });
     }
     const updatedTutory = await Tutory.findOneAndUpdate(
       { _id: idtutory },
@@ -255,27 +260,21 @@ try {
 
     await User.findOneAndUpdate(
       { _id: user._id },
-      {device_token}, // El operador $addToSet agrega el estudiante solo si no existe aún
+      { device_token }, // El operador $addToSet agrega el estudiante solo si no existe aún
       { new: true } // Devuelve el registro actualizado
     );
-    if(updatedTutory.idstudent_list.length===1){
-     
-      createProcess(updatedTutory)
-      
+    if (updatedTutory.idstudent_list.length === 1) {
+      createProcess(updatedTutory);
     }
-    res.json(updatedTutory)
+    res.json(updatedTutory);
+  } catch (err) {
+    res.status(500).json({ success: false, msg: "Error en el servidor" });
+  }
+};
 
-
-    
-
-} catch (err) {
-  res.status(500).json({ success: false, msg:"Error en el servidor" });
-}
-}
-
-const removeStudentAtListTutory=async(req,res)=>{
+const removeStudentAtListTutory = async (req, res) => {
   try {
-      // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
     // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
     const token = req.headers.authorization.split(" ")[1];
     if (!token) {
@@ -305,76 +304,83 @@ const removeStudentAtListTutory=async(req,res)=>{
         msg: "Válido solo para rol student",
       });
     }
-    
-    const {idtutory}=req.query
-   const tutory = await Tutory.findOneAndUpdate(
+
+    const { idtutory } = req.query;
+    const tutory = await Tutory.findOneAndUpdate(
       { _id: idtutory },
       { $pull: { idstudent_list: user._id } },
       { new: true }
-    ).catch(err=>{return res.status(500).json({msg:""})});
-    console.log(tutory.idstudent_list.length)
-    if(tutory.idstudent_list.length == 0 ){
-     const t= crons.find(c=>c.id===tutory._id)
-     t.stop()
-    }
-      res.status(200).json(tutory)
-
-  } catch (error) {
-    res.status(500).json({ success: false, msg:"Error en el servidor" })
-  }
-}
-
-const createProcess = async(tutory) =>{
-
-  const date_start=tutory.date_start.split(" ")[0]
-  const date_end=tutory.date_end.split(" ")[0]
-  const hour_start=tutory.date_start.split(" ")[1]
-  const month=parseInt(date_start.split("-")[1])
-  const month_end=parseInt(date_end.split("-")[1])
-  //const day=parseInt(date_start.split("-")[2])
-  const hour=parseInt(hour_start.split(":")[0])
-  const minute=parseInt(hour_start.split(":")[1])
-  const d = getNumberDayWeek(date_start)
-  const device_tokens=[]
-  const idstudent_list = tutory.idstudent_list
-  for(let i = 0; i<idstudent_list.length;i++){
-    const t = (await User.findOne({_id:idstudent_list[i]})).device_token
-    device_tokens.push(t)
-  }
-  
-  //recordar cada semana
-  const task=cron.schedule(`0 ${minute} ${hour-1} * ${month}-${month_end} ${d+1}`, () => { 
-    
-    for(let i=0;i<device_tokens.length;i++){
-      
-      const message = {
-        data:{ruta:"tutory",id:tutory._id.toString()},
-        notification: {
-          title: `¡Recordatorio de tutoría de ${tutory.name}!`,
-          body: `Tutoría de ${tutory.name} empieza en 1 hora`
-        },
-        token:device_tokens[i].toString()
-      }
-      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-          // Enviar el mensaje a través de FCM
-      admin.messaging().send(message).then((response) => {
-      console.log("Enviado") 
-    }).catch((error) => {
-      console.log("No enviado: ",error)
+    ).catch((err) => {
+      return res.status(500).json({ msg: "" });
     });
+    console.log(tutory.idstudent_list.length);
+    if (tutory.idstudent_list.length == 0) {
+      const t = crons.find((c) => c.id === tutory._id);
+      t.stop();
     }
-    
-  }, {
-    scheduled: true,
-    timezone: "America/Bogota"
-  });
+    res.status(200).json(tutory);
+  } catch (error) {
+    res.status(500).json({ success: false, msg: "Error en el servidor" });
+  }
+};
 
-  crons.push({id:tutory._id.toString(),task})
-}
+const createProcess = async (tutory) => {
+  const date_start = tutory.date_start.split(" ")[0];
+  const date_end = tutory.date_end.split(" ")[0];
+  const hour_start = tutory.date_start.split(" ")[1];
+  const month = parseInt(date_start.split("-")[1]);
+  const month_end = parseInt(date_end.split("-")[1]);
+  //const day=parseInt(date_start.split("-")[2])
+  const hour = parseInt(hour_start.split(":")[0]);
+  const minute = parseInt(hour_start.split(":")[1]);
+  const d = getNumberDayWeek(date_start);
+  const device_tokens = [];
+  const idstudent_list = tutory.idstudent_list;
+  for (let i = 0; i < idstudent_list.length; i++) {
+    const t = (await User.findOne({ _id: idstudent_list[i] })).device_token;
+    device_tokens.push(t);
+  }
+
+  //recordar cada semana
+  const task = cron.schedule(
+    `0 ${minute} ${hour - 1} * ${month}-${month_end} ${d + 1}`,
+    () => {
+      for (let i = 0; i < device_tokens.length; i++) {
+        const message = {
+          data: { ruta: "tutory", id: tutory._id.toString() },
+          notification: {
+            title: `¡Recordatorio de tutoría de ${tutory.name}!`,
+            body: `Tutoría de ${tutory.name} empieza en 1 hora`,
+          },
+          token: device_tokens[i].toString(),
+        };
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+        });
+        // Enviar el mensaje a través de FCM
+        admin
+          .messaging()
+          .send(message)
+          .then((response) => {
+            console.log("Enviado");
+          })
+          .catch((error) => {
+            console.log("No enviado: ", error);
+          });
+      }
+    },
+    {
+      scheduled: true,
+      timezone: "America/Bogota",
+    }
+  );
+
+  crons.push({ id: tutory._id.toString(), task });
+};
 module.exports = {
   createTutory,
   getWeeklySchedule,
   sendNotificationsAboutTutory,
   addStudentAtListTutory,
-  removeStudentAtListTutory
+  removeStudentAtListTutory,
 };
