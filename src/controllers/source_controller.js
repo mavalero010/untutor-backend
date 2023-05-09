@@ -57,7 +57,6 @@ const createSource = async (req, res, file) => {
         msg: "Admin no existe, token inválido",
       });
     }
-
     const imageName = await bcrypt.hash(file.originalname, saltRounds);
 
     const params = {
@@ -66,14 +65,13 @@ const createSource = async (req, res, file) => {
       Body: file.buffer, //buffer
       ContentType: file.mimetype,
     };
-
     const command = new PutObjectCommand(params);
-
+    
     let source = await Source.findOne({ name: req.body.name });
     if (source !== null) {
       return res.status(409).json({
         success: false,
-        msg: "Recurso ya existe",
+        msg: "Recurso ya existe, cambie el nombre del archivo",
       });
     }
 
@@ -85,7 +83,6 @@ const createSource = async (req, res, file) => {
       idsubject: req.body.idsubject,
       idcomment_list: [],
     });
-
     await source.save().then((data) =>
       res.status(200).json({
         data,
@@ -126,12 +123,12 @@ const getSourceById = async (req, res) => {
     }
 
     //Verifica que el user sea de rol student
-    /*if (user.role !== "student") {
+    if (user.role !== "student") {
       return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
-    }*/
+    }
 
     const { idsource } = req.query;
 

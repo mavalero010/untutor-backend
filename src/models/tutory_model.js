@@ -4,13 +4,8 @@ const tutorySchema = new mongoose.Schema(
   {
     name: { type: String, require: true },
     description: { type: String, require: true },
-    idtutor: {
-      type: {
-        type: mongoose.Schema.ObjectId,
-        ref: "User",
-      },
-      require: true,
-    }, //Role = Tutor
+    idtutor: {type:mongoose.Schema.ObjectId,
+    ref:'User',require:true}, //Role = Tutor
     idstudent_list: [
       {
         type: mongoose.Schema.ObjectId,
@@ -23,12 +18,14 @@ const tutorySchema = new mongoose.Schema(
       ref: "Subject",
       require: true,
     },
-    date_start: { type: Date, require: true },
-    duration: { type: Number, require: true }, //Tiempo en segunds
+    date_start: { type: String, require: true },
+    date_end: { type: String, require: true },
+    duration: { type: String, require: true },
+    device_token: { type: String },
     location: { type: String, require: true },
     isVirtual: { type: Boolean, require: true },
+    available: { type: Boolean, require: true },
   },
-
   {
     versionKey: false,
   }

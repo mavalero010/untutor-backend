@@ -61,12 +61,12 @@ const getHome = async (req, res) => {
     }
 
     //Verifica que el user sea de rol student
-   /* if (user.role !== "student") {
+   if (user.role !== "student") {
       return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
-    }*/
+    }
 
     //Obtengo frases aleatorias de la DB en mongo
     const phrase =
@@ -75,23 +75,33 @@ const getHome = async (req, res) => {
     //Obtengo  las 6 primeras materias aleatorias relacionadas a la facultad del usuario
     const idfaculty = user.idfaculty;
     let subjects = (await Subject.find({ idfaculty:idfaculty }))
-  
+    let sus =[]
     let faculty = await Faculty.findOne({_id:idfaculty})
     let tutors = await User.find()
 
-    subjects=subjects.map((s) => {
-
-      return {
-        _id: s._id,
-        name: s.name,
-        credits:s.credits,
-        description:s.description,
-        url_background_image: s.url_background_image,
-        difficulty_level:s.difficulty_level,
-        faculty:{_id:s.idfaculty,name:faculty.name},
-        tutors: tutors.filter(t=> s.idtutor_list.indexOf(t._id)!==-1).map(tu=>{return {_id:tu._id,name:tu.name}}),
+    for(let i=0;i<subjects.length;i++){
+      const getObjectParams = {
+        Bucket: bucketProfilePhoto,
+        Key: subjects[i].url_background_image,
       };
-    });
+      let url = null;
+      if (subjects[i].url_background_image !== null) {
+        const command = new GetObjectCommand(getObjectParams);
+        url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+      }
+      sus.push({
+        _id: subjects[i]._id,
+        name: subjects[i].name,
+        credits:subjects[i].credits,
+        description:subjects[i].description,
+        url_background_image: url,
+        difficulty_level:subjects[i].difficulty_level,
+        faculty:{_id:subjects[i].idfaculty,name:faculty.name},
+        tutors: tutors.filter(t=> subjects[i].idtutor_list.indexOf(t._id)!==-1).map(tu=>{return {_id:tu._id,name:tu.name}}),
+      })
+    }
+
+    subjects=sus
     if (subjects.length >= 6) {
       subjects = subjects
         .sort(function () {
@@ -162,12 +172,12 @@ const getBrowser = async (req, res) => {
     }
 
     //Verifica que el user sea de rol student
-   /* if (user.role !== "student") {
+   if (user.role !== "student") {
       return res.status(401).json({
         success: false,
         msg: "Válido solo para rol student",
       });
-    }*/
+    }
 
     //Obtengo el filtro para saber en que base de datos buscar, sea User, Subject, Source, Event etc
     const { filter,page, limit} = req.query;

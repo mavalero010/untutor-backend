@@ -25,6 +25,7 @@ const unverifiedUserSchema = new mongoose.Schema(
       },
     ],
     phone: { type: String },
+    device_token:{type:String, default:null},
     createdAt: { type: Date, expires: "1h", default: Date.now },
   },
   {

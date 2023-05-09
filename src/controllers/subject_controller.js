@@ -5,6 +5,7 @@ const Admin = require("../models/admin_model");
 const Faculty = require("../models/faculty_model");
 const Comment = require("../models/comment_model");
 const Story = require("../models/story_model");
+const ObjectId = require('mongodb').ObjectId;
 const { getTokenData, authTokenDecoded } = require("../config/jwt.config");
 
 const multer = require("multer");
@@ -22,6 +23,7 @@ const dotenv = require("dotenv");
 dotenv.config();
 const saltRounds = parseInt(process.env.SALT_ROUNDS_ENCRYPT_PASSWORD);
 const bucketProfilePhoto = process.env.BUCKET_PROFILE_PHOTO;
+const bucketSource=process.env.BUCKET_SOURCE_UNTUTOR
 const bucketRegion = process.env.BUCKET_REGION;
 const accessKey = process.env.AWS_ACCESS_KEY;
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
@@ -507,13 +509,91 @@ const getSubjectById = async (req, res) => {
     if (subject === null) {
       return res.status(404).json({ msg: "Subject no existe" });
     }
+    let favorites=await User.find({idfavorite_subjects: { $elemMatch: { $eq: idsubject } }})
     let tutors = await User.find({ role: "tutor" });
     let stories = await Story.find({ idsubject });
     let faculty = await Faculty.findOne({ _id: subject.idfaculty });
     let comments = await Comment.find({ idtarget: idsubject });
     let authors = await User.find({ role: "student" });
+      let comms=[]
+      let tam=0
+      if(comments.length-4<0){
+          tam=0
+      }else{
+        tam = comments.length-4
+      }
+    for(let co = tam;co<comments.length;co++){
+      
+      let au = {}
+      for(let i = 0;i<authors.length;i++){
+        let url = null
+        if (authors[i].perfil_photo !== null) {
+          const getObjectParams = {
+            Bucket: bucketProfilePhoto,
+            Key: authors[i].perfil_photo,
+          };
+    
+          const command = new GetObjectCommand(getObjectParams);
+           url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+        
+        }
+        if(authors[i]._id.equals(comments[co].idauthor)){
+         
+          au={_id: authors[i]._id,
+            name: authors[i].name,
+            perfil_photo: url}
+          
+        }
+      }
+      comms.push({
+        _id: comments[co]._id,
+        comment: comments[co].comment,
+        author:au,
+        date:comments[co].date
+      })
+    }
+    /*stories.map((s) => {
+        return { _id: s._id, name: s.name, multimedia: s.multimedia };
+      }),*/
+      let tamS=0
+      let ss=[]
+      if(stories.length-4<0){
+        tamS=0
+      }else{
+        tamS = stories.length-4
+      }
+      for(let i=tamS;i<stories.length;i++){
+        let urlS=null
+        
+        if (stories[i].multimedia !== null) {
+          const getObjectParams = {
+            Bucket: bucketSource,
+            Key: stories[i].multimedia,
+          };
+          const command = new GetObjectCommand(getObjectParams);
+          urlS = await getSignedUrl(s3, command, { expiresIn: 3600 });
+          }
+          let urlProfilePhotoUser=null
+          const ustemp = await User.findOne({_id:stories[i].iduser})
+          if (ustemp.perfil_photo !== null) {
+            const getObjectParams = {
+              Bucket: bucketProfilePhoto,
+              Key: ustemp.perfil_photo,
+            };
+      
+            const command = new GetObjectCommand(getObjectParams);
+            urlProfilePhotoUser = await getSignedUrl(s3, command, { expiresIn: 3600 });
+          
+          }
+          ss.push({_id: stories[i]._id, message: stories[i].name, multimedia: urlS, author:{_id:ustemp._id,perfil_photo:urlProfilePhotoUser,name:ustemp.name}})
+      }
     let sources= await Source.find({idsubject})
-
+    let isfavorite=false
+    user.idfavorite_subjects.forEach(element => {
+      if(element.toString()==idsubject){
+        isfavorite=true
+      }
+    });
 
     if (subject.url_background_image !== null) {
       const getObjectParams = {
@@ -538,32 +618,18 @@ const getSubjectById = async (req, res) => {
         .map((tu) => {
           return { _id: tu._id, name: tu.name };
         }),
-      stories: stories.map((s) => {
-        return { _id: s._id, name: s.name, multimedia: s.multimedia };
-      }),
-      comments: comments.map((c) => {
-        return {
-          _id: c._id,
-          comment: c.comment,
-          author: authors
-            .filter((a) => a._id.equals(c.idauthor))
-            .map((au) => {
-              return {
-                _id: au._id,
-                name: au.name,
-                perfil_photo: au.perfil_photo,
-              };
-            }),
-        };
-      }),
-      sources:sources.map(s=>{return {name:s.name,url:s.url_file}})
+      stories:ss,
+      comments: comms,
+      sources:sources.map(s=>{return {name:s.name,url:s.url_file}}).length,
+      isfavorite,
+      likes:favorites.length
     };
 
     res.json(s);
   } catch (error) {
     res.status(500).json({
       succes: false,
-      msg: "Error en controlador uploadBackgroundImageSubject",
+      msg: "Error en servidor",
     });
   }
 };
