@@ -3,6 +3,7 @@ const Tutory = require("../models/tutory_model");
 const Admin = require("../models/admin_model");
 const Subject = require("../models/subject_model");
 const firebase = require("firebase/app");
+const moment = require('moment');
 const { getAnalytics } = require("firebase/analytics");
 const dotenv = require("dotenv");
 const admin = require('firebase-admin');
@@ -106,22 +107,66 @@ const createTutory = async (req, res) => {
     res.status(500).json({ succes: false, msg: "Error en servidor" });
   }
 };
+function generateDatesBetween(fechaInicial, fechaFinal) {
+  const fechas = [];
 
+  let fechaActual = moment(fechaInicial);
+  while (fechaActual <= moment(fechaFinal)) {
+    fechas.push(fechaActual.format('YYYY-MM-DD'));
+    fechaActual.add(1, 'days');
+  }
+
+  return fechas;
+}
 const getWeeklySchedule = async (req, res) => {
   try {
-    //TODO: DEFINIR QUIEN PUEDE INGRESAR A VER ESTO
+     // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "No se proporcionó un token" });
+    }
 
-    const { dates } = req.body;
-    const { idsubject } = req.query;
+    //Decodifico Token
+    const dataUserDecoded = getTokenData(token);
+    const mail = dataUserDecoded.data.email;
+    //Lo busco en BD
+    let user = (await User.findOne({ email: mail })) || null;
+
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataUserDecoded, user);
+
+    if (!validateInfo) {
+      return res.status(401).json({
+        success: false,
+        msg: "Usuario no existe o contraseña inválida",
+      });
+    }
+
+    //Verifica que el user sea de rol student
+    if (user.role !== "student") {
+      return res.status(401).json({
+        success: false,
+        msg: "Válido solo para rol student",
+      });
+    }
+    const { idsubject,date_start,date_end } = req.query;
     const tutories = await Tutory.find({ idsubject });
     let t = [];
-    dates.forEach((d) => {
+    const year=parseInt(date_start.split("-"[0]))
+    const month_start=parseInt(date_start.split("-")[1])
+    const month_end=parseInt(date_end.split("-")[1])
+    const day_start=parseInt(date_start.split("-")[2])
+    const day_end=parseInt(date_end.split("-")[2])
+    
+    const days = generateDatesBetween(date_start,date_end); 
+    days.forEach((d) => {
       let tu = tutories
         .filter((t) => t.date_start.split(" ")[0] === d)
         .map((e) => {
           return {
             start: e.date_start.split(" ")[1],
-            end: e.end.split(" ")[1],
+            end: e.date_end.split(" ")[1],
             available:e.available
           };
         });
