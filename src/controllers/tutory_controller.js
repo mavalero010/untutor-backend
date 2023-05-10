@@ -11,22 +11,34 @@ const serviceAccount = require("../../untutor-notifications-firebase-adminsdk-xm
 const crons = [];
 dotenv.config();
 const cron = require("node-cron");
-const firebaseConfig = {
-  apiKey: process.env.APIKEY,
-  authDomain: process.env.AUTHDOMAIN,
-  projectId: process.env.PROJECTID,
-  storageBucket: process.env.STORAGEBUCKET,
-  messagingSenderId: process.env.MESSAGINGSENDERID,
-  appId: process.env.APPID,
-  measurementId: process.env.MEASUREMENTID,
-};
+
 const {
   getToken,
   getTokenData,
   authTokenDecoded,
   getUnexpiredToken,
 } = require("../config/jwt.config");
-
+const {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+  headObject,
+} = require("@aws-sdk/client-s3");
+const saltRounds = parseInt(process.env.SALT_ROUNDS_ENCRYPT_PASSWORD);
+const bucketProfilePhoto = process.env.BUCKET_PROFILE_PHOTO;
+const bucketSource=process.env.BUCKET_SOURCE_UNTUTOR
+const bucketRegion = process.env.BUCKET_REGION;
+const accessKey = process.env.AWS_ACCESS_KEY;
+const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+const s3 = new S3Client({
+  credentials: {
+    accessKeyId: accessKey,
+    secretAccessKey: secretAccessKey,
+  },
+  region: bucketRegion,
+});
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 function getNumberDayWeek(date) {
   const day = new Date(date).getDay();
   return day === 0 ? 7 : day; // para ajustar la numeración del domingo de 0 a 7
@@ -360,15 +372,36 @@ const getTutoryById =async(req,res)=>{
     const {idtutory}=req.query
 
     const tutory = await Tutory.findOne({_id:idtutory}) || null
-
+    
     if(tutory ===null){
       return res.status(404).json({msg:"Tutoría no existe"})
     }
 
     const tutor = await User.findOne({_id:tutory.idtutor})
-
+    let urlProfilePhotoUser=null
+    if (tutor.perfil_photo !== null) {
+      const getObjectParams = {
+        Bucket: bucketProfilePhoto,
+        Key: tutor.perfil_photo,
+      };
+      
+      const command = new GetObjectCommand(getObjectParams);
+      urlProfilePhotoUser = await getSignedUrl(s3, command, { expiresIn: 3600 });
+      
+    }
+    res.status(200).json({_id: tutory._id,
+      name: tutory.name,
+      description: tutory.description,
+      tutor: {_id:tutor._id,name:tutor.name,profile_photo:urlProfilePhotoUser},
+      idstudent_list: tutory.idstudent_list,
+      idsubject: tutory.idsubject,
+      date_start: tutory.date_start,
+      date_end: tutory.date_end,
+      duration: tutory.duration,
+      location: tutory.location,
+      isVirtual: tutory.isVirtual,
+      available: tutory.available})
     
-    res.json(tutory)
   } catch (error) {
     res.status(500).json({ success: false, msg: "Error en el servidor" });
   }

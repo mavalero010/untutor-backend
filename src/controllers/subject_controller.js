@@ -523,7 +523,6 @@ const getSubjectById = async (req, res) => {
         tam = comments.length-4
       }
     for(let co = tam;co<comments.length;co++){
-      
       let au = {}
       for(let i = 0;i<authors.length;i++){
         let url = null
