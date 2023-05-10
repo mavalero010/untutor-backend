@@ -185,7 +185,7 @@ const getWeeklySchedule = async (req, res) => {
             end: e.date_end.split(" ")[1],
             available: e.available,
             _id:e._id,
-            duration:e.duration.split(" ")[0]
+            duration:parseInt(e.duration)
           };
         });
       t.push({ date: d, tutories: tu });
@@ -397,7 +397,7 @@ const getTutoryById =async(req,res)=>{
       idsubject: tutory.idsubject,
       date_start: tutory.date_start,
       date_end: tutory.date_end,
-      duration: tutory.duration,
+      duration: parseInt(tutory.duration),
       location: tutory.location,
       isVirtual: tutory.isVirtual,
       available: tutory.available})
