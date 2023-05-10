@@ -90,7 +90,7 @@ const createTutory = async (req, res) => {
       date_end,
       duration,
       location,
-      isVirtual,
+      is_virtual,
       available,
     } = req.body;
     const tutory = new Tutory({
@@ -103,7 +103,7 @@ const createTutory = async (req, res) => {
       date_end,
       duration,
       location,
-      isVirtual,
+      is_virtual,
       available,
     });
 
@@ -329,7 +329,8 @@ const removeStudentAtListTutory = async (req, res) => {
     console.log(tutory.idstudent_list.length);
     if (tutory.idstudent_list.length == 0) {
       const t = crons.find((c) => c.id === tutory._id);
-      t.stop();
+      console.log(t)
+      //t.task.stop();
     }
     res.status(200).json(tutory);
   } catch (error) {
@@ -399,7 +400,7 @@ const getTutoryById =async(req,res)=>{
       date_end: tutory.date_end,
       duration: parseInt(tutory.duration),
       location: tutory.location,
-      isVirtual: tutory.isVirtual,
+      is_virtual: tutory.is_virtual,
       available: tutory.available})
     
   } catch (error) {

@@ -23,7 +23,7 @@ const tutorySchema = new mongoose.Schema(
     duration: { type: String, require: true },
     device_token: { type: String },
     location: { type: String, require: true },
-    isVirtual: { type: Boolean, require: true },
+    is_virtual: { type: Boolean, require: true },
     available: { type: Boolean, require: true },
   },
   {
