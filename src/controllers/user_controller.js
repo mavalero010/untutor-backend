@@ -1,4 +1,5 @@
 const User = require("../models/user_model");
+const Admin = require("../models/admin_model");
 const University = require("../models/university_model");
 const UnverifiedUser = require("../models/unverified_user_model");
 const Comment = require("../models/comment_model");
@@ -946,6 +947,67 @@ const createStory=async(req,res,file)=>{
     res.status(500).json({ succes: false, msg: "Error en servidor" });
   }
 }
+
+const getAllUsers= async(req,res)=>{
+try {
+  // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({ message: "No se proporcionó un token" });
+    }
+    //Decodifico Token
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    //Lo busco en BD
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    //valido que la info decodificada del token sea válida
+
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      return res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //Recibo params
+    const users = await User.find();
+    let results=[]
+    for(d of users){  
+      let university = (await University.findOne({ _id: d.iduniversity }));
+      let faculty = (await Faculty.findOne({_id:d.idfaculty}))
+      let subjects= await Subject.find({_id:{$in:d.idfavorite_subjects}})
+      let url = null;
+      if (d.perfil_photo !== null) {
+        const getObjectParams = {
+          Bucket: bucketProfilePhoto,
+          Key: d.perfil_photo,
+        };
+        const command = new GetObjectCommand(getObjectParams);
+        url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+      }
+      results.push({
+        _id: d._id,
+        name: d.name,
+        university: { name: university.name, _id: university._id },
+        email: d.email,
+        gender: d.gender,
+        birthday: d.birthday,
+        biography: d.biography,
+        role: d.role,
+        faculty: { _id: faculty._id, name: faculty.name },
+        city_of_birth: d.city_of_birth,
+        perfil_photo: url,
+        idfavorite_subjects: subjects.map(s=>{return {_id:s._id,name:s.name}}),
+        phone: d.phone,
+      })
+    }
+
+    res.status(200).json(results)
+} catch (error) {
+  res.status(500).json({ succes: false, msg: "Error en servidor" });
+}
+}
 module.exports = {
   registerUser,
   confirm,
@@ -960,5 +1022,6 @@ module.exports = {
   addFavoriteSubjectAtList,
   removeFavoriteSubjectFromList,
   deleteUser,
-  createStory
+  createStory,
+  getAllUsers
 };

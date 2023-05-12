@@ -139,6 +139,7 @@ const getAllSubjectsByID_Faculty = async (req, res) => {
     const { docs, totalPages } = myData;
     const results = [];
     for (d of docs) {
+      
       const getObjectParams = {
         Bucket: bucketProfilePhoto,
         Key: d.url_background_image,
