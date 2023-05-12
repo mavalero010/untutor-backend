@@ -1,4 +1,5 @@
 const userController = require("../controllers/user_controller")
+const mongoosePaginate = require('mongoose-paginate-v2')
 const Router = require("express")
 const dotenv = require("dotenv")
 dotenv.config()
@@ -12,6 +13,7 @@ const routerUser = Router()
 routerUser.get(`/api/${process.env.VERSION_API}/user/confirm/:token`, userController.confirm)
 routerUser.get(`/api/${process.env.VERSION_API}/profile`,userController.getUserById) 
 routerUser.get(`/api/${process.env.VERSION_API}/user/home`, userController.home)
+routerUser.get(`/api/${process.env.VERSION_API}/admin/users`, userController.getAllUsers)
 
 routerUser.post(`/api/${process.env.VERSION_API}/user/register`, userController.registerUser)
 routerUser.post(`/api/${process.env.VERSION_API}/user/login`, userController.login)
