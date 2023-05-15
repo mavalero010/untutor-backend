@@ -87,7 +87,7 @@ const getHome = async (req, res) => {
       let url = null;
       if (subjects[i].url_background_image !== null) {
         const command = new GetObjectCommand(getObjectParams);
-        url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+        url = (await getSignedUrl(s3, command)).split("?")[0];
       }
       sus.push({
         _id: subjects[i]._id,
@@ -212,7 +212,7 @@ const getBrowser = async (req, res) => {
         let url=null
         if(s.item.url_background_image!==null){
         const command =  new GetObjectCommand(getObjectParams);
-         url =  await getSignedUrl(s3, command, { expiresIn: 3600 });
+         url =  (await getSignedUrl(s3, command)).split("?")[0];
       }
       subList.push({
         _id:s.item._id,
@@ -251,7 +251,7 @@ const getBrowser = async (req, res) => {
         let url=null
         if(s.item.url_file!==null){
         const command =  new GetObjectCommand(getObjectParams);
-         url =  await getSignedUrl(s3, command, { expiresIn: 3600 });
+         url =  (await getSignedUrl(s3, command)).split("?")[0];
       }
       sourList.push({
         item:{

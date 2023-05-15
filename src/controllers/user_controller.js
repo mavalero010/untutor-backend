@@ -250,13 +250,14 @@ const login = async (req, res) => {
       const getObjectParams = {
         Bucket: bucketProfilePhoto,
         Key: user.perfil_photo,
+        //ACL:'public-read'
       };
       const command = new GetObjectCommand(getObjectParams);
-      url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+      
+      url = (await getSignedUrl(s3, command)).split("?")[0];
     }
     const university = await University.findOne({_id:user.iduniversity})
     await User.updateOne({ _id: user._id }, { device_token})
-    //TODO: Buscar campos de seguridad extras para añadir al login, sea mensajes por SMS o autenticacion por huella digital
     return res.status(200).json({
       token,
       user:{
@@ -581,13 +582,17 @@ const uploadProfilePhoto = async (req, res, file) => {
         msg: "Válido solo para rol student",
       });
     }
-
     const imageName = await bcrypt.hash(file.originalname, saltRounds);
+    /*Key: filename,
+  Body: fs.createReadStream(filepath),
+  Bucket: Constant.AWS_S3_BUCKET,
+  ACL:'public-read-write' */
     const params = {
       Bucket: bucketProfilePhoto,
       Key: imageName,
       Body: file.buffer, //buffer
       ContentType: file.mimetype,
+      //ACL:'public-read'
     };
     const command = new PutObjectCommand(params);
     await s3.send(command);
@@ -597,7 +602,7 @@ const uploadProfilePhoto = async (req, res, file) => {
     );
     res.status(200).json(u);
   } catch (error) {
-    res.status(500).json({ succes: false, msg: "Error en servidor" });
+    res.status(500).json({ succes: false, msg: error });
   }
 };
 
@@ -701,7 +706,7 @@ const getUserById = async (req, res) => {
         Key: us.perfil_photo,
       };
       const command = new GetObjectCommand(getObjectParams);
-      url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+      url = (await getSignedUrl(s3, command)).split("?")[0]
     }
 
     res.status(200).json({
@@ -983,7 +988,7 @@ try {
           Key: d.perfil_photo,
         };
         const command = new GetObjectCommand(getObjectParams);
-        url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+        url =(await getSignedUrl(s3, command)).split("?")[0]
       }
       results.push({
         _id: d._id,

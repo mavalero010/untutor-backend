@@ -387,9 +387,7 @@ const getTutoryById = async (req, res) => {
       };
 
       const command = new GetObjectCommand(getObjectParams);
-      urlProfilePhotoUser = await getSignedUrl(s3, command, {
-        expiresIn: 3600,
-      });
+      urlProfilePhotoUser = (await getSignedUrl(s3, command)).split("?")[0]
     }
     res
       .status(200)

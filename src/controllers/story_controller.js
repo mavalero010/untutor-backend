@@ -78,7 +78,7 @@ try {
       };
 
       const command = new GetObjectCommand(getObjectParams);
-       url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+       url = (await getSignedUrl(s3, command)).split("?")[0];
     
     }
     story.multimedia=url
@@ -91,7 +91,7 @@ try {
       };
 
       const command = new GetObjectCommand(getObjectParams);
-      urlProfilePhotoUser = await getSignedUrl(s3, command, { expiresIn: 3600 });
+      urlProfilePhotoUser = (await getSignedUrl(s3, command)).split("?")[0];
     
     }
     res.status(200).json({_id:story.id,message:story.name,multimedia:story.multimedia,author:{_id:us._id,name:us.name,perfil_photo:urlProfilePhotoUser}})

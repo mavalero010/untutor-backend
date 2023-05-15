@@ -84,7 +84,7 @@ const getAllSubjects = async (req, res) => {
       let url = null;
       if (s.url_background_image !== null) {
         const command = new GetObjectCommand(getObjectParams);
-        url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+        url = (await getSignedUrl(s3, command)).split("?")[0];
       }
       subs.push({
         _id: s._id,
@@ -147,7 +147,7 @@ const getAllSubjectsByID_Faculty = async (req, res) => {
       let url = null;
       if (d.url_background_image !== null) {
         const command = new GetObjectCommand(getObjectParams);
-        url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+        url = (await getSignedUrl(s3, command)).split("?")[0];
       }
 
       results.push({
@@ -534,7 +534,7 @@ const getSubjectById = async (req, res) => {
           };
     
           const command = new GetObjectCommand(getObjectParams);
-           url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+           url = (await getSignedUrl(s3, command)).split("?")[0];
         
         }
         if(authors[i]._id.equals(comments[co].idauthor)){
@@ -571,7 +571,7 @@ const getSubjectById = async (req, res) => {
             Key: stories[i].multimedia,
           };
           const command = new GetObjectCommand(getObjectParams);
-          urlS = await getSignedUrl(s3, command, { expiresIn: 3600 });
+          urlS = (await getSignedUrl(s3, command)).split("?")[0];
           }
           let urlProfilePhotoUser=null
           const ustemp = await User.findOne({_id:stories[i].iduser})
@@ -582,7 +582,7 @@ const getSubjectById = async (req, res) => {
             };
       
             const command = new GetObjectCommand(getObjectParams);
-            urlProfilePhotoUser = await getSignedUrl(s3, command, { expiresIn: 3600 });
+            urlProfilePhotoUser = (await getSignedUrl(s3, command)).split("?")[0];
           
           }
           ss.push({_id: stories[i]._id, message: stories[i].name, multimedia: urlS, author:{_id:ustemp._id,perfil_photo:urlProfilePhotoUser,name:ustemp.name}})
@@ -602,7 +602,7 @@ const getSubjectById = async (req, res) => {
       };
 
       const command = new GetObjectCommand(getObjectParams);
-      const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+      const url = (await getSignedUrl(s3, command)).split("?")[0];
       subject.url_background_image = url;
     }
     const s = {
