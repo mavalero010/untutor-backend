@@ -27,7 +27,7 @@ const {
 } = require("@aws-sdk/client-s3");
 const saltRounds = parseInt(process.env.SALT_ROUNDS_ENCRYPT_PASSWORD);
 const bucketProfilePhoto = process.env.BUCKET_PROFILE_PHOTO;
-const bucketSource=process.env.BUCKET_SOURCE_UNTUTOR
+const bucketSource = process.env.BUCKET_SOURCE_UNTUTOR;
 const bucketRegion = process.env.BUCKET_REGION;
 const accessKey = process.env.AWS_ACCESS_KEY;
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
@@ -169,23 +169,25 @@ const getWeeklySchedule = async (req, res) => {
 */
     const days = generateDatesBetween(date_start, date_end);
     days.forEach((d) => {
-      
       let tu = tutories
         .filter(
           (t) =>
-
             new Date(t.date_start.split(" ")[0]) <= new Date(d) &&
             new Date(t.date_end.split(" ")[0]) >= new Date(d) &&
-            Math.abs(new Date(d).getTime() - new Date(t.date_start.split(" ")[0]).getTime()) %
-              7 === 0
+            Math.abs(
+              new Date(d).getTime() -
+                new Date(t.date_start.split(" ")[0]).getTime()
+            ) %
+              7 ===
+              0
         )
         .map((e) => {
           return {
             start: e.date_start.split(" ")[1],
             end: e.date_end.split(" ")[1],
             available: e.available,
-            _id:e._id,
-            duration:parseInt(e.duration)
+            _id: e._id,
+            duration: parseInt(e.duration),
           };
         });
       t.push({ date: d, tutories: tu });
@@ -260,7 +262,6 @@ const addStudentAtListTutory = async (req, res) => {
     }
 
     const { idtutory } = req.query;
-    const { device_token } = req.body;
     const tutory = await Tutory.findById(idtutory);
     if (!tutory) {
       return res.status(404).json({ msg: "No se encontró tutoría" });
@@ -271,13 +272,13 @@ const addStudentAtListTutory = async (req, res) => {
       { new: true } // Devuelve el registro actualizado
     );
 
-    await User.findOneAndUpdate(
+    /*await User.findOneAndUpdate(
       { _id: user._id },
-      { device_token }, // El operador $addToSet agrega el estudiante solo si no existe aún
+      { device_token:user.device_token }, // El operador $addToSet agrega el estudiante solo si no existe aún
       { new: true } // Devuelve el registro actualizado
-    );
+    );*/
     if (updatedTutory.idstudent_list.length === 1) {
-      createProcess(updatedTutory);
+      createProcess(req,res,updatedTutory);
     }
     res.json(updatedTutory);
   } catch (err) {
@@ -326,11 +327,10 @@ const removeStudentAtListTutory = async (req, res) => {
     ).catch((err) => {
       return res.status(500).json({ msg: "" });
     });
-    console.log(tutory.idstudent_list.length);
     if (tutory.idstudent_list.length == 0) {
-      const t = crons.find((c) => c.id === tutory._id);
-      console.log(t)
-      //t.task.stop();
+      const t = crons.find((c) => c.id === tutory._id.toString());
+      
+      t.task.stop(); 
     }
     res.status(200).json(tutory);
   } catch (error) {
@@ -338,7 +338,7 @@ const removeStudentAtListTutory = async (req, res) => {
   }
 };
 
-const getTutoryById =async(req,res)=>{
+const getTutoryById = async (req, res) => {
   try {
     // Aquí se verificaría si el token JWT enviado por el cliente es válido
     // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
@@ -370,96 +370,150 @@ const getTutoryById =async(req,res)=>{
         msg: "Válido solo para rol student",
       });
     }
-    const {idtutory}=req.query
+    const { idtutory } = req.query;
 
-    const tutory = await Tutory.findOne({_id:idtutory}) || null
-    
-    if(tutory ===null){
-      return res.status(404).json({msg:"Tutoría no existe"})
+    const tutory = (await Tutory.findOne({ _id: idtutory })) || null;
+
+    if (tutory === null) {
+      return res.status(404).json({ msg: "Tutoría no existe" });
     }
 
-    const tutor = await User.findOne({_id:tutory.idtutor})
-    let urlProfilePhotoUser=null
+    const tutor = await User.findOne({ _id: tutory.idtutor });
+    let urlProfilePhotoUser = null;
     if (tutor.perfil_photo !== null) {
       const getObjectParams = {
         Bucket: bucketProfilePhoto,
         Key: tutor.perfil_photo,
       };
-      
+
       const command = new GetObjectCommand(getObjectParams);
-      urlProfilePhotoUser = await getSignedUrl(s3, command, { expiresIn: 3600 });
-      
+      urlProfilePhotoUser = await getSignedUrl(s3, command, {
+        expiresIn: 3600,
+      });
     }
-    res.status(200).json({_id: tutory._id,
-      name: tutory.name,
-      description: tutory.description,
-      tutor: {_id:tutor._id,name:tutor.name,profile_photo:urlProfilePhotoUser},
-      idstudent_list: tutory.idstudent_list,
-      idsubject: tutory.idsubject,
-      date_start: tutory.date_start,
-      date_end: tutory.date_end,
-      duration: parseInt(tutory.duration),
-      location: tutory.location,
-      is_virtual: tutory.is_virtual,
-      available: tutory.available})
-    
+    res
+      .status(200)
+      .json({
+        _id: tutory._id,
+        name: tutory.name,
+        description: tutory.description,
+        tutor: {
+          _id: tutor._id,
+          name: tutor.name,
+          profile_photo: urlProfilePhotoUser,
+        },
+        idstudent_list: tutory.idstudent_list,
+        idsubject: tutory.idsubject,
+        date_start: tutory.date_start,
+        date_end: tutory.date_end,
+        duration: parseInt(tutory.duration),
+        location: tutory.location,
+        is_virtual: tutory.is_virtual,
+        available: tutory.available,
+      });
   } catch (error) {
     res.status(500).json({ success: false, msg: "Error en el servidor" });
   }
-}
+};
 
-const createProcess = async (tutory) => {
-  const date_start = tutory.date_start.split(" ")[0];
-  const date_end = tutory.date_end.split(" ")[0];
-  const hour_start = tutory.date_start.split(" ")[1];
-  const month = parseInt(date_start.split("-")[1]);
-  const month_end = parseInt(date_end.split("-")[1]);
-  //const day=parseInt(date_start.split("-")[2])
-  const hour = parseInt(hour_start.split(":")[0]);
-  const minute = parseInt(hour_start.split(":")[1]);
-  const d = getNumberDayWeek(date_start);
-  const device_tokens = [];
-  const idstudent_list = tutory.idstudent_list;
-  for (let i = 0; i < idstudent_list.length; i++) {
-    const t = (await User.findOne({ _id: idstudent_list[i] })).device_token;
-    device_tokens.push(t);
-  }
-
-  //recordar cada semana
-  const task = cron.schedule(
-    `0 ${minute} ${hour - 1} * ${month}-${month_end} ${d + 1}`,
-    () => {
-      for (let i = 0; i < device_tokens.length; i++) {
-        const message = {
-          data: { ruta: "tutory", id: tutory._id.toString() },
-          notification: {
-            title: `¡Recordatorio de tutoría de ${tutory.name}!`,
-            body: `Tutoría de ${tutory.name} empieza en 1 hora`,
-          },
-          token: device_tokens[i].toString(),
-        };
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
-        });
-        // Enviar el mensaje a través de FCM
-        admin
-          .messaging()
-          .send(message)
-          .then((response) => {
-            console.log("Enviado");
-          })
-          .catch((error) => {
-            console.log("No enviado: ", error);
-          });
-      }
-    },
-    {
-      scheduled: true,
-      timezone: "America/Bogota",
+const createProcess = async (req,res,tutory) => {
+  
+    const date_start = tutory.date_start.split(" ")[0];
+    const date_end = tutory.date_end.split(" ")[0];
+    const hour_start = tutory.date_start.split(" ")[1];
+    const month = parseInt(date_start.split("-")[1]);
+    const month_end = parseInt(date_end.split("-")[1]);
+    const hour = parseInt(hour_start.split(":")[0]);
+    const minute = parseInt(hour_start.split(":")[1]);
+    const d = getNumberDayWeek(date_start);
+    const device_tokens = []; 
+    const idstudent_list = tutory.idstudent_list;
+    for (let i = 0; i < idstudent_list.length; i++) {
+      const t = (await User.findOne({ _id: idstudent_list[i] })).device_token;
+      device_tokens.push(t);
     }
-  );
 
-  crons.push({ id: tutory._id.toString(), task });
+    //recordar cada semana
+    
+    const task = cron.schedule(
+      `0 ${minute} ${hour - 1} * ${month}-${month_end} ${(d + 1)%7}`,
+      () => {
+        for (let i = 0; i < device_tokens.length; i++) {
+          const message = {
+            data: { ruta: "tutory", id: tutory._id.toString() },
+            notification: {
+              title: `¡Recordatorio de tutoría de ${tutory.name}!`,
+              body: `Tutoría de ${tutory.name} empieza en 1 hora`,
+            },
+            token: device_tokens[i].toString(),
+          };
+          admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+          });
+          // Enviar el mensaje a través de FCM
+          admin
+            .messaging()
+            .send(message)
+            .then((response) => {
+              console.log("Enviado");
+            })
+            .catch((error) => {
+              console.log("No enviado");
+            });
+        }
+      },
+      {
+        scheduled: true,
+        timezone: "America/Bogota",
+      }
+    );
+
+    crons.push({ id: tutory._id.toString(), task });
+  
+};
+const getTutoriesByIdStudent = async (req, res) => {
+  try {
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "No se proporcionó un token" });
+    }
+
+    //Decodifico Token
+    const dataUserDecoded = getTokenData(token);
+    const mail = dataUserDecoded.data.email;
+    //Lo busco en BD
+    let user = (await User.findOne({ email: mail })) || null;
+
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataUserDecoded, user);
+
+    if (!validateInfo) {
+      return res.status(401).json({
+        success: false,
+        msg: "Usuario no existe o contraseña inválida",
+      });
+    }
+
+    //Verifica que el user sea de rol student
+    if (user.role !== "student") {
+      return res.status(401).json({
+        success: false,
+        msg: "Válido solo para rol student",
+      });
+    }
+
+    const tutories = await Tutory.find({
+      idstudent_list: {
+        $elemMatch: { $eq: user._id }
+      }
+    })
+    //{idfavorite_subjects: { $elemMatch: { $eq: idsubject } }
+    res.status(200).json(tutories)
+  } catch (error) {
+    res.status(500).json({ success: false, msg: "Error en el servidor" });
+  }
 };
 module.exports = {
   createTutory,
@@ -467,5 +521,7 @@ module.exports = {
   sendNotificationsAboutTutory,
   addStudentAtListTutory,
   removeStudentAtListTutory,
-  getTutoryById
+  getTutoryById,
+  getTutoriesByIdStudent,
+  createProcess
 };

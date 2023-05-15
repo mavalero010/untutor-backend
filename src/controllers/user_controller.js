@@ -208,7 +208,7 @@ const confirm = async (req, res) => {
 const login = async (req, res) => {
   try {
     //Obtengo datos desde el front
-    const { email, password } = req.body;
+    const { email, password, device_token } = req.body;
 
     //Obtengo datos de usuario
 
@@ -254,8 +254,8 @@ const login = async (req, res) => {
       const command = new GetObjectCommand(getObjectParams);
       url = await getSignedUrl(s3, command, { expiresIn: 3600 });
     }
-
     const university = await University.findOne({_id:user.iduniversity})
+    await User.updateOne({ _id: user._id }, { device_token})
     //TODO: Buscar campos de seguridad extras para añadir al login, sea mensajes por SMS o autenticacion por huella digital
     return res.status(200).json({
       token,
@@ -790,7 +790,6 @@ const updateUser = async (req, res) => {
     res.status(500).json({ succes: false, msg: "Error en servidor" });
   }
 };
-//TODO: CREAR UN MÉTODO PARA BORRAR USUARIO DE BASE DE DATOS EN CASO DE NO CONFIRMARSE LA CUENTA
 
 const addFavoriteSubjectAtList=async(req,res)=>{
   try {
@@ -937,7 +936,7 @@ const createStory=async(req,res,file)=>{
     const story = new Story({name:name,iduser:user._id,multimedia:imageName,idsubject:idsubject,idcomment_list:null})
     await story.save()
 
-    const su=await Subject.findOneAndUpdate(
+    const su = await Subject.findOneAndUpdate(
       { _id: idsubject },
       { $addToSet: { idstory_list: story._id } }, // El operador $addToSet agrega el estudiante solo si no existe aún
       { new: true } // Devuelve el registro actualizado

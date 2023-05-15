@@ -13,6 +13,7 @@ const routerTutory = require("./src/routes/tutory_route")
 const routerAvatar = require("./src/routes/avatar_route")
 const routerBlog = require("./src/routes/blog_route")
 const routerStory = require("./src/routes/story_route")
+const sn = require("./send_notifications")
 connectDB();
 
 const app = express();
@@ -23,8 +24,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.get("/api", (req, res) => {
-  res.send("API USER")
+  res.send("UNTUTOR")
 });
+
+sn.sendMessages()
 
 app.use(routerAvatar)
 app.use(routerUser)

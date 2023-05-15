@@ -6,6 +6,7 @@ const routerTutory = Router()
 
 routerTutory.get(`/api/${process.env.VERSION_API}/tutory/week`, tutoryController.getWeeklySchedule)
 routerTutory.get(`/api/${process.env.VERSION_API}/tutory`, tutoryController.getTutoryById)
+routerTutory.get(`/api/${process.env.VERSION_API}/tutories-student`, tutoryController.getTutoriesByIdStudent)
 routerTutory.post(`/api/${process.env.VERSION_API}/tutory`, tutoryController.createTutory)
 routerTutory.post(`/api/${process.env.VERSION_API}/tutory/add-list`, tutoryController.sendNotificationsAboutTutory)
 routerTutory.put(`/api/${process.env.VERSION_API}/add-tutory`, tutoryController.addStudentAtListTutory)
