@@ -180,9 +180,10 @@ const getBrowser = async (req, res) => {
     }
 
     //Obtengo el filtro para saber en que base de datos buscar, sea User, Subject, Source, Event etc
-    const { filter,page, limit} = req.query;
+    const {page, limit} = req.query;
     const { search_string } = req.body;
     let searchResults = false;
+    let results=[]
     let DB = false;
     const options = {
       includeScore: true,
@@ -191,14 +192,15 @@ const getBrowser = async (req, res) => {
     };
 
     //Busco en la base de datos según sea el filtro
-    if (filter === "tutor") {
-      DB = await User.find({ role: filter });
-      const fuse = new Fuse(DB, options);
+    
+      DB = await User.find({ role: "tutor" });
+      let fuse = new Fuse(DB, options);
       searchResults = fuse.search(search_string);
-    }
-    if (filter === "subject") {
+      results.push(searchResults)
+    
+    
       DB = await Subject.find();
-      const fuse = new Fuse(DB, options);
+       fuse = new Fuse(DB, options);
       searchResults = fuse.search(search_string);
       let subList=[]
 
@@ -232,11 +234,13 @@ const getBrowser = async (req, res) => {
 
       }
      searchResults=subList
-    }
-    if (filter === "source") {
+     results.push(searchResults)
+    
+    
       DB = await Source.find();
-      const fuse = new Fuse(DB, options);
+       fuse = new Fuse(DB, options);
       searchResults = fuse.search(search_string);
+    
       let sourList=[]
 
       for (s of searchResults){
@@ -265,12 +269,14 @@ const getBrowser = async (req, res) => {
 
       }
      searchResults=sourList
-    }
-    if (filter === "event") {
+     results.push(searchResults)
+    
+    
       DB = await Event.find();
-      const fuse = new Fuse(DB, options);
+       fuse = new Fuse(DB, options);
       searchResults = fuse.search(search_string);
-    }
+      results.push(searchResults)
+    
 
     if (!searchResults) {
      return res.status(200).json({
@@ -282,7 +288,7 @@ const getBrowser = async (req, res) => {
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
 
-     res.status(200).json({ results: searchResults.sort(function(a, b) {
+     res.status(200).json({ results: results.flat().sort(function(a, b) {
         return b.score - a.score;
     }).slice(startIndex,endIndex) });
     
