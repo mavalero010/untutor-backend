@@ -277,7 +277,6 @@ const login = async (req, res) => {
       },
     });
   } catch (error) {
-    //TODO: Averiguar que status es el mas indicado
     res.status(500).json({
       msg: "Error iniciando sesión",
     });
@@ -613,7 +612,7 @@ const uploadProfilePhoto = async (req, res, file) => {
       
       url = (await getSignedUrl(s3, command)).split("?")[0];
       res.status(200).json({
-       
+       token,
         user:{
           _id: u._id,
           name: u.name,
