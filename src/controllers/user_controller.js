@@ -596,11 +596,41 @@ const uploadProfilePhoto = async (req, res, file) => {
     };
     const command = new PutObjectCommand(params);
     await s3.send(command);
-    const u = await User.updateOne(
+    const u = await User.findByIdAndUpdate(
       { _id: user.id },
-      { $set: { perfil_photo: imageName } }
+      {perfil_photo: imageName },
+      { new: true }
     );
-    res.status(200).json(u);
+    const university = await University.findOne({_id:user.iduniversity})
+    let url = null;
+    if (user.perfil_photo !== null) {
+      const getObjectParams = {
+        Bucket: bucketProfilePhoto,
+        Key: u.perfil_photo,
+        //ACL:'public-read'
+      };
+      const command = new GetObjectCommand(getObjectParams);
+      
+      url = (await getSignedUrl(s3, command)).split("?")[0];
+      res.status(200).json({
+       
+        user:{
+          _id: u._id,
+          name: u.name,
+          university: { name: university.name, _id: university._id },
+          email: u.email,
+          gender: u.gender,
+          birthday: u.birthday,
+          biography: u.biography,
+          role: u.role,
+          faculty: u.idfaculty,
+          city_of_birth: u.city_of_birth,
+          perfil_photo: url,
+          idfavorite_subjects: u.idfavorite_subjects,
+          phone: u.phone,
+        },
+      });
+    }
   } catch (error) {
     res.status(500).json({ succes: false, msg: error });
   }

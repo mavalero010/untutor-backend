@@ -161,8 +161,16 @@ const getWeeklySchedule = async (req, res) => {
         msg: "Válido solo para rol student",
       });
     }
-    const { idsubject, date_start, date_end } = req.query;
-    const tutories = await Tutory.find({ idsubject });
+    const { idsubject, date_start, date_end, show_only_user } = req.query;
+    let tutories = await Tutory.find({ idstudent_list: { $in: user._id } });
+
+    if ((idsubject != undefined) && (show_only_user===true)) {
+      tutories = tutories.filter((t) =>
+        t.idstudent_list.some((objectId) => objectId.equals(user._id))
+      );
+    }else if(show_only_user===true){
+      tutories = await Tutory.find({idsubject})
+    }
     let t = [];
     /*const diffTime = Math.abs(dateStartDate - todayDate);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
@@ -278,7 +286,7 @@ const addStudentAtListTutory = async (req, res) => {
       { new: true } // Devuelve el registro actualizado
     );*/
     if (updatedTutory.idstudent_list.length === 1) {
-      createProcess(req,res,updatedTutory);
+      createProcess(req, res, updatedTutory);
     }
     res.json(updatedTutory);
   } catch (err) {
@@ -329,8 +337,8 @@ const removeStudentAtListTutory = async (req, res) => {
     });
     if (tutory.idstudent_list.length == 0) {
       const t = crons.find((c) => c.id === tutory._id.toString());
-      
-      t.task.stop(); 
+
+      t.task.stop();
     }
     res.status(200).json(tutory);
   } catch (error) {
@@ -387,87 +395,83 @@ const getTutoryById = async (req, res) => {
       };
 
       const command = new GetObjectCommand(getObjectParams);
-      urlProfilePhotoUser = (await getSignedUrl(s3, command)).split("?")[0]
+      urlProfilePhotoUser = (await getSignedUrl(s3, command)).split("?")[0];
     }
-    res
-      .status(200)
-      .json({
-        _id: tutory._id,
-        name: tutory.name,
-        description: tutory.description,
-        tutor: {
-          _id: tutor._id,
-          name: tutor.name,
-          profile_photo: urlProfilePhotoUser,
-        },
-        idstudent_list: tutory.idstudent_list,
-        idsubject: tutory.idsubject,
-        date_start: tutory.date_start,
-        date_end: tutory.date_end,
-        duration: parseInt(tutory.duration),
-        location: tutory.location,
-        is_virtual: tutory.is_virtual,
-        available: tutory.available,
-      });
+    res.status(200).json({
+      _id: tutory._id,
+      name: tutory.name,
+      description: tutory.description,
+      tutor: {
+        _id: tutor._id,
+        name: tutor.name,
+        profile_photo: urlProfilePhotoUser,
+      },
+      idstudent_list: tutory.idstudent_list,
+      idsubject: tutory.idsubject,
+      date_start: tutory.date_start,
+      date_end: tutory.date_end,
+      duration: parseInt(tutory.duration),
+      location: tutory.location,
+      is_virtual: tutory.is_virtual,
+      available: tutory.available,
+    });
   } catch (error) {
     res.status(500).json({ success: false, msg: "Error en el servidor" });
   }
 };
 
-const createProcess = async (req,res,tutory) => {
-  
-    const date_start = tutory.date_start.split(" ")[0];
-    const date_end = tutory.date_end.split(" ")[0];
-    const hour_start = tutory.date_start.split(" ")[1];
-    const month = parseInt(date_start.split("-")[1]);
-    const month_end = parseInt(date_end.split("-")[1]);
-    const hour = parseInt(hour_start.split(":")[0]);
-    const minute = parseInt(hour_start.split(":")[1]);
-    const d = getNumberDayWeek(date_start);
-    const device_tokens = []; 
-    const idstudent_list = tutory.idstudent_list;
-    for (let i = 0; i < idstudent_list.length; i++) {
-      const t = (await User.findOne({ _id: idstudent_list[i] })).device_token;
-      device_tokens.push(t);
-    }
+const createProcess = async (req, res, tutory) => {
+  const date_start = tutory.date_start.split(" ")[0];
+  const date_end = tutory.date_end.split(" ")[0];
+  const hour_start = tutory.date_start.split(" ")[1];
+  const month = parseInt(date_start.split("-")[1]);
+  const month_end = parseInt(date_end.split("-")[1]);
+  const hour = parseInt(hour_start.split(":")[0]);
+  const minute = parseInt(hour_start.split(":")[1]);
+  const d = getNumberDayWeek(date_start);
+  const device_tokens = [];
+  const idstudent_list = tutory.idstudent_list;
+  for (let i = 0; i < idstudent_list.length; i++) {
+    const t = (await User.findOne({ _id: idstudent_list[i] })).device_token;
+    device_tokens.push(t);
+  }
 
-    //recordar cada semana
-    
-    const task = cron.schedule(
-      `0 ${minute} ${hour - 1} * ${month}-${month_end} ${(d + 1)%7}`,
-      () => {
-        for (let i = 0; i < device_tokens.length; i++) {
-          const message = {
-            data: { ruta: "tutory", id: tutory._id.toString() },
-            notification: {
-              title: `¡Recordatorio de tutoría de ${tutory.name}!`,
-              body: `Tutoría de ${tutory.name} empieza en 1 hora`,
-            },
-            token: device_tokens[i].toString(),
-          };
-          admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
+  //recordar cada semana
+
+  const task = cron.schedule(
+    `0 ${minute} ${hour - 1} * ${month}-${month_end} ${(d + 1) % 7}`,
+    () => {
+      for (let i = 0; i < device_tokens.length; i++) {
+        const message = {
+          data: { ruta: "tutory", id: tutory._id.toString() },
+          notification: {
+            title: `¡Recordatorio de tutoría de ${tutory.name}!`,
+            body: `Tutoría de ${tutory.name} empieza en 1 hora`,
+          },
+          token: device_tokens[i].toString(),
+        };
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+        });
+        // Enviar el mensaje a través de FCM
+        admin
+          .messaging()
+          .send(message)
+          .then((response) => {
+            console.log("Enviado");
+          })
+          .catch((error) => {
+            console.log("No enviado");
           });
-          // Enviar el mensaje a través de FCM
-          admin
-            .messaging()
-            .send(message)
-            .then((response) => {
-              console.log("Enviado");
-            })
-            .catch((error) => {
-              console.log("No enviado");
-            });
-        }
-      },
-      {
-        scheduled: true,
-        timezone: "America/Bogota",
       }
-    );
+    },
+    {
+      scheduled: true,
+      timezone: "America/Bogota",
+    }
+  );
 
-    crons.push({ id: tutory._id.toString(), task });
-  
+  crons.push({ id: tutory._id.toString(), task });
 };
 const getTutoriesByIdStudent = async (req, res) => {
   try {
@@ -504,11 +508,11 @@ const getTutoriesByIdStudent = async (req, res) => {
 
     const tutories = await Tutory.find({
       idstudent_list: {
-        $elemMatch: { $eq: user._id }
-      }
-    })
+        $elemMatch: { $eq: user._id },
+      },
+    });
     //{idfavorite_subjects: { $elemMatch: { $eq: idsubject } }
-    res.status(200).json(tutories)
+    res.status(200).json(tutories);
   } catch (error) {
     res.status(500).json({ success: false, msg: "Error en el servidor" });
   }
@@ -521,5 +525,5 @@ module.exports = {
   removeStudentAtListTutory,
   getTutoryById,
   getTutoriesByIdStudent,
-  createProcess
+  createProcess,
 };
