@@ -168,7 +168,7 @@ const getWeeklySchedule = async (req, res) => {
       tutories = tutories.filter((t) =>
         t.idstudent_list.some((objectId) => objectId.equals(user._id))
       );
-    }else if(show_only_user===true){
+    }else if(show_only_user===false){
       tutories = await Tutory.find({idsubject})
     }
     let t = [];
