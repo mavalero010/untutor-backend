@@ -14,6 +14,7 @@ routerUser.get(`/api/${process.env.VERSION_API}/user/confirm/:token`, userContro
 routerUser.get(`/api/${process.env.VERSION_API}/profile`,userController.getUserById) 
 routerUser.get(`/api/${process.env.VERSION_API}/user/home`, userController.home)
 routerUser.get(`/api/${process.env.VERSION_API}/admin/users`, userController.getAllUsers)
+routerUser.get(`/api/${process.env.VERSION_API}/user/stories`, userController.getAllStoriesByIdUser)
 
 routerUser.post(`/api/${process.env.VERSION_API}/user/register`, userController.registerUser)
 routerUser.post(`/api/${process.env.VERSION_API}/user/login`, userController.login)

@@ -1012,6 +1012,104 @@ try {
   res.status(500).json({ succes: false, msg: "Error en servidor" });
 }
 }
+
+const getAllStoriesByIdUser= async(req,res)=>{
+  try {
+
+  
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "No se proporcionó un token" });
+    }
+
+    //Decodifico Token
+    const dataUserDecoded = getTokenData(token);
+    const mail = dataUserDecoded.data.email;
+    //Lo busco en BD
+    let user = (await User.findOne({ email: mail })) || null;
+
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataUserDecoded, user);
+
+    if (!validateInfo) {
+      return res.status(401).json({
+        success: false,
+        msg: "Usuario no existe o contraseña inválida",
+      });
+    }
+
+    //Verifica que el user sea de rol student
+    if (user.role !== "student") {
+      return res.status(401).json({
+        success: false,
+        msg: "Válido solo para rol student",
+      });
+    }
+    const stories = await Story.find({iduser:user._id})
+    let us= user
+    let st=[]
+    for (story of stories){
+      
+      let url = null
+      if (story.multimedia !== null) {
+        const getObjectParams = {
+          Bucket: bucketSource,
+          Key: story.multimedia,
+        };
+  
+        const command = new GetObjectCommand(getObjectParams);
+         url = (await getSignedUrl(s3, command)).split("?")[0];
+      
+      }
+      story.multimedia=url
+  
+      let urlProfilePhotoUser=null
+      if (us.perfil_photo !== null) {
+        const getObjectParams = {
+          Bucket: bucketProfilePhoto,
+          Key: us.perfil_photo,
+        };
+  
+        const command = new GetObjectCommand(getObjectParams);
+        urlProfilePhotoUser = (await getSignedUrl(s3, command)).split("?")[0];
+      
+      }
+
+      let comments =[]
+      if(story.idcomment_list!==null){
+        let cs = story.idcomment_list.map(s=>s.toString())
+       
+        for (comment of cs){
+          let urlUserComment=null
+          const c = await Comment.findOne({_id:comment})
+          const commenter = await User.findOne({_id:c.idauthor})
+        
+          if (commenter.perfil_photo !== null) {
+            const getObjectParams = {
+              Bucket: bucketProfilePhoto,
+              Key: commenter.perfil_photo,
+            };
+            const command = new GetObjectCommand(getObjectParams);
+            urlUserComment = (await getSignedUrl(s3, command)).split("?")[0];
+          
+          }
+          comments.push({_id:commenter._id, name:commenter.name, message: c.comment})
+         
+        }
+      }
+      
+      st.push({_id:story.id,message:story.name,multimedia:story.multimedia,author:{_id:us._id,name:us.name,perfil_photo:urlProfilePhotoUser},comments:comments})
+     }
+   
+    res.status(200).json(st)
+ 
+
+  } catch (error) {
+    res.status(500).json({ succes: false, msg: error });
+  }
+}
 module.exports = {
   registerUser,
   confirm,
@@ -1027,5 +1125,6 @@ module.exports = {
   removeFavoriteSubjectFromList,
   deleteUser,
   createStory,
-  getAllUsers
+  getAllUsers,
+  getAllStoriesByIdUser
 };
