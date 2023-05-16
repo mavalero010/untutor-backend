@@ -14,10 +14,13 @@ const routerAvatar = require("./src/routes/avatar_route")
 const routerBlog = require("./src/routes/blog_route")
 const routerStory = require("./src/routes/story_route")
 const sn = require("./send_notifications")
+const cors = require('cors');
+
 connectDB();
 
 const app = express();
 dotenv.config();
+
 
 app.use(express.static("./public"));
 app.use(express.json());
@@ -29,6 +32,7 @@ app.get("/api", (req, res) => {
 
 sn.sendMessages()
 
+app.use(cors());
 app.use(routerAvatar)
 app.use(routerUser)
 app.use(routerPhrase)
