@@ -432,8 +432,12 @@ const createProcess = async (req, res, tutory) => {
   const device_tokens = [];
   const idstudent_list = tutory.idstudent_list;
   for (let i = 0; i < idstudent_list.length; i++) {
-    const t = (await User.findOne({ _id: idstudent_list[i] })).device_token;
-    device_tokens.push(t);
+    const t = ((await User.findOne({ _id: idstudent_list[i] })))
+  
+    if(t!= null){
+      device_tokens.push(t.device_token);
+    }
+   
   }
 
   //recordar cada semana
@@ -526,4 +530,5 @@ module.exports = {
   getTutoryById,
   getTutoriesByIdStudent,
   createProcess,
+  crons
 };
