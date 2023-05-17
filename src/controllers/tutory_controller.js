@@ -8,10 +8,12 @@ const { getAnalytics } = require("firebase/analytics");
 const dotenv = require("dotenv");
 const admin = require("firebase-admin");
 const serviceAccount = require("../../untutor-notifications-firebase-adminsdk-xmbpo-01e725a99a.json");
-const crons = [];
+const crons = []; 
 dotenv.config();
 const cron = require("node-cron");
-
+admin.initializeApp({ 
+  credential: admin.credential.cert(serviceAccount)
+});
 const {
   getToken,
   getTokenData,
@@ -326,7 +328,6 @@ const removeStudentAtListTutory = async (req, res) => {
         msg: "Válido solo para rol student",
       });
     }
-
     const { idtutory } = req.query;
     const tutory = await Tutory.findOneAndUpdate(
       { _id: idtutory },
@@ -334,12 +335,16 @@ const removeStudentAtListTutory = async (req, res) => {
       { new: true }
     ).catch((err) => {
       return res.status(500).json({ msg: "" });
-    });
-    if (tutory.idstudent_list.length == 0) {
-      const t = crons.find((c) => c.id === tutory._id.toString());
-
+    }); 
+    
+    const t = crons.find((c) => (c.id === tutory._id.toString())&& (c.idstudent === user._id.toString()));
+    if(t!=undefined){
       t.task.stop();
+      
     }
+    //console.log("CRONS NUEVO: ",crons.length)
+      
+    
     res.status(200).json(tutory);
   } catch (error) {
     res.status(500).json({ success: false, msg: "Error en el servidor" });
@@ -421,9 +426,11 @@ const getTutoryById = async (req, res) => {
 };
 
 const createProcess = async (req, res, tutory) => {
+  try {
+    
   const date_start = tutory.date_start.split(" ")[0];
   const date_end = tutory.date_end.split(" ")[0];
-  const hour_start = tutory.date_start.split(" ")[1];
+  const hour_start = tutory.date_start.split(" ")[1]; 
   const month = parseInt(date_start.split("-")[1]);
   const month_end = parseInt(date_end.split("-")[1]);
   const hour = parseInt(hour_start.split(":")[0]);
@@ -431,51 +438,57 @@ const createProcess = async (req, res, tutory) => {
   const d = getNumberDayWeek(date_start);
   const device_tokens = [];
   const idstudent_list = tutory.idstudent_list;
-  for (let i = 0; i < idstudent_list.length; i++) {
-    const t = ((await User.findOne({ _id: idstudent_list[i] })))
   
-    if(t!= null){
-      device_tokens.push(t.device_token);
-    }
-   
-  }
 
   //recordar cada semana
+  for (let i = 0; i < idstudent_list.length; i++) {
+    const t = ((await User.findOne({ _id: idstudent_list[i] })))
 
-  const task = cron.schedule(
-    `0 ${minute} ${hour - 1} * ${month}-${month_end} ${(d + 1) % 7}`,
-    () => {
-      for (let i = 0; i < device_tokens.length; i++) {
+    const task =  cron.schedule(`0 ${minute} ${hour - 1} * ${month}-${month_end} ${(d + 1) % 7}`,
+     async () => {
+      
+        const t = ((await User.findOne({ _id: idstudent_list[i] })))
+        
+        let device_token=null
+        if(t!= null){ 
+          device_token= t.device_token
+       
+        }
+     
         const message = {
           data: { ruta: "tutory", id: tutory._id.toString() },
-          notification: {
+          notification: { 
             title: `¡Recordatorio de tutoría de ${tutory.name}!`,
             body: `Tutoría de ${tutory.name} empieza en 1 hora`,
           },
-          token: device_tokens[i].toString(),
+          token: device_token.toString(),
         };
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
-        });
-        // Enviar el mensaje a través de FCM
+        // Enviar el mensaje a través de FCM   
         admin
           .messaging()
-          .send(message)
-          .then((response) => {
+          .send(message)  
+          .then((response) => { 
             console.log("Enviado");
           })
-          .catch((error) => {
+          .catch((error) => { 
             console.log("No enviado");
           });
+      }, 
+      { 
+        scheduled: true,
+        timezone: "America/Bogota",
       }
-    },
-    {
-      scheduled: true,
-      timezone: "America/Bogota",
-    }
-  );
+    );
+    crons.push({ id: tutory._id.toString(),idstudent:t._id.toString(), task });
+    
+  }
+  
 
-  crons.push({ id: tutory._id.toString(), task });
+  
+
+  } catch (error) {
+    console.log("error: ", error) 
+  }
 };
 const getTutoriesByIdStudent = async (req, res) => {
   try {

@@ -57,7 +57,7 @@ const createSource = async (req, res, file) => {
         msg: "Admin no existe, token inválido",
       });
     }
-    const imageName = await bcrypt.hash(file.originalname, saltRounds);
+    const imageName = file.originalname
 
     const params = {
       Bucket: bucketSourceFile,

@@ -581,7 +581,7 @@ const uploadProfilePhoto = async (req, res, file) => {
         msg: "Válido solo para rol student",
       });
     }
-    const imageName = await bcrypt.hash(file.originalname, saltRounds);
+    const imageName = file.originalname
     /*Key: filename,
   Body: fs.createReadStream(filepath),
   Bucket: Constant.AWS_S3_BUCKET,
@@ -958,7 +958,7 @@ const createStory=async(req,res,file)=>{
       });
     }
     const {name,idsubject}=req.body
-    const imageName = await bcrypt.hash(file.originalname, saltRounds);
+    const imageName = file.originalname
     const params = {
       Bucket: bucketSource,
       Key: imageName,
