@@ -235,7 +235,7 @@ try {
       name,
       iduniversity,
       email,
-      password,
+     // password,
       gender,
       birthday,
       biography,
@@ -246,9 +246,8 @@ try {
       idfavorite_subjects,
       phone,
     } = req.body;
-
+   
     //Encripta clave
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
     // Verificar que el usuario no exista
     let user = (await User.findOne({ email })) || null;
     if (user !== null) {
@@ -257,12 +256,10 @@ try {
         msg: "Email ya registrado",
       });
     }
-    password = hashedPassword;
     user = new User({
       name,
       iduniversity,
       email,
-      password,
       gender,
       birthday,
       biography,
@@ -271,6 +268,7 @@ try {
       idfaculty,
       city_of_birth,
       perfil_photo,
+      password:null,
       idfavorite_subjects,
       phone,
     });
