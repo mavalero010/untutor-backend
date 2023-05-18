@@ -4,6 +4,7 @@ const University = require("../models/university_model");
 const UnverifiedUser = require("../models/unverified_user_model");
 const Comment = require("../models/comment_model");
 const Story = require("../models/story_model");
+const Tutory = require("../models/tutory_model");
 const Subject = require("../models/subject_model");
 const Source = require("../models/source_model");
 const Faculty = require("../models/faculty_model");
@@ -737,8 +738,27 @@ const getUserById = async (req, res) => {
       const command = new GetObjectCommand(getObjectParams);
       url = (await getSignedUrl(s3, command)).split("?")[0]
     }
-
-    res.status(200).json({
+    let sss = []
+   
+    for(let i=0;i<user.idfavorite_subjects.length;i++){
+      let urlsss = null;
+      const s = await Subject.findOne({_id:user.idfavorite_subjects[i]})
+      if (s.url_background_image !== null) {
+        const getObjectParams = {
+          Bucket: bucketProfilePhoto,
+          Key: s.url_background_image,
+        };
+        const command = new GetObjectCommand(getObjectParams);
+        urlsss = (await getSignedUrl(s3, command)).split("?")[0]
+        sss.push({_id:s._id,name:s.name,url_background_image:urlsss,tutors:s.idtutor_list.length})
+      }
+    }
+    const tutories = await Tutory.find({
+      idstudent_list: {
+        $elemMatch: { $eq: user._id },
+      },
+    });
+    const user_res = {
       _id: us._id,
       name: us.name,
       university: { name: university.name, _id: university._id },
@@ -750,9 +770,13 @@ const getUserById = async (req, res) => {
       faculty: { _id: faculty._id, name: faculty.name },
       city_of_birth: us.city_of_birth,
       perfil_photo: url,
-      idfavorite_subjects: subjects.map(s=>{return {_id:s._id,name:s.name}}),
+      subjects: sss,
+      tutories,
       phone: us.phone,
-    });
+    }
+
+
+    res.status(200).json({user:user_res});
   } catch (error) {
     res.status(500).json({ succes: false, msg: "Error en servidor" });
   }
