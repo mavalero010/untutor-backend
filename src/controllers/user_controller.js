@@ -758,6 +758,22 @@ const getUserById = async (req, res) => {
         $elemMatch: { $eq: user._id },
       },
     });
+const stories = await Story.find({iduser:user._id})
+let ss=[]
+    for(let i=0;i<stories.length;i++){
+      let urlS=null
+
+      if (stories[i].multimedia !== null) {
+        const getObjectParams = {
+          Bucket: bucketSource,
+          Key: stories[i].multimedia,
+        };
+        const command = new GetObjectCommand(getObjectParams);
+        urlS = (await getSignedUrl(s3, command)).split("?")[0];
+        }
+        ss.push({_id: stories[i]._id, message: stories[i].name, multimedia: urlS, author:{_id:user._id,perfil_photo:url,name:user.name}})
+
+    }
     const user_res = {
       _id: us._id,
       name: us.name,
@@ -772,6 +788,7 @@ const getUserById = async (req, res) => {
       perfil_photo: url,
       subjects: sss,
       tutories,
+      stories:ss,
       phone: us.phone,
     }
 
