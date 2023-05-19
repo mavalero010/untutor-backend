@@ -185,7 +185,7 @@ const getBrowser = async (req, res) => {
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
     let searchResults = false;
-    let results=[]
+    let results={}
     let DB = false;
     const options = {
       includeScore: true,
@@ -202,10 +202,9 @@ const getBrowser = async (req, res) => {
         searchResults[i].type="tutor"
         searchResults[i].item.password="Invalid access"
       }
-      results.push({tutors:searchResults.flat().sort(function(a, b) {
+      results.tutors=searchResults.flat().sort(function(a, b) {
         return a.score - b.score;
-    }).slice(startIndex,endIndex) })
-    
+    }).slice(startIndex,endIndex) 
     
       DB = await Subject.find();
        fuse = new Fuse(DB, options);
@@ -245,9 +244,9 @@ const getBrowser = async (req, res) => {
 
       }
      searchResults=subList
-     results.push({subjects:searchResults.flat().sort(function(a, b) {
+     results.subjects=searchResults.flat().sort(function(a, b) {
       return a.score - b.score;
-  }).slice(startIndex,endIndex) })
+  }).slice(startIndex,endIndex)
     
     
       DB = await Source.find();
@@ -283,9 +282,9 @@ const getBrowser = async (req, res) => {
 
       }
      searchResults=sourList
-     results.push({sources:searchResults.flat().sort(function(a, b) {
+     results.sources=searchResults.flat().sort(function(a, b) {
       return a.score - b.score;
-  }).slice(startIndex,endIndex) })
+  }).slice(startIndex,endIndex)
     
     
       DB = await Event.find();
@@ -294,9 +293,9 @@ const getBrowser = async (req, res) => {
       for(let i = 0; i<searchResults.length;i++){
         searchResults[i].type="event"
       }
-      results.push({events:searchResults.flat().sort(function(a, b) {
+      results.events=searchResults.flat().sort(function(a, b) {
         return a.score - b.score;
-    }).slice(startIndex,endIndex) })
+    }).slice(startIndex,endIndex) 
     
 
     if (!searchResults) {
