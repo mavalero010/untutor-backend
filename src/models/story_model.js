@@ -13,7 +13,7 @@ const storySchema = new mongoose.Schema(
         ref: 'Comment',
       },
     ]
-   // ,createdAt: { type: Date, expires: "24h", default: Date.now }
+   ,createdAt: { type: Date, expires: "24h", default: Date.now }
   },
   {
     versionKey: false,

@@ -1,6 +1,7 @@
 const Subject = require("../models/subject_model");
 const Event = require("../models/event_model");
 const User = require("../models/user_model");
+const Story = require("../models/story_model");
 const Phrase = require("../models/phrase_model");
 const Source = require("../models/source_model")
 const Faculty = require("../models/faculty_model")
@@ -210,8 +211,9 @@ const getBrowser = async (req, res) => {
        fuse = new Fuse(DB, options);
       searchResults = fuse.search(search_string);
       let subList=[]
-
+   
       for (s of searchResults){
+       
         const getObjectParams = {
           Bucket: bucketProfilePhoto,
           Key: s.item.url_background_image
@@ -220,6 +222,23 @@ const getBrowser = async (req, res) => {
         if(s.item.url_background_image!==null){
         const command =  new GetObjectCommand(getObjectParams);
          url =  (await getSignedUrl(s3, command)).split("?")[0];
+      }
+      let storiess = s.item.idstory_list
+      for(let i = 0; i<s.item.idstory_list.length;i++){
+        const story_finder = await Story.findOne({_id:s.item.idstory_list[i]})
+        
+        if (story_finder===null){
+          storiess = await Subject.findOneAndUpdate(
+            { _id: s.item._id },
+            { $pull: { idstory_list: s.item.idstory_list[i] } },
+            {new:true}
+          ).catch((err) => {
+              return res.status(400).json({
+                success: false,
+                msg: "Error eliminando story de lista en Subject",
+              });
+            });
+        }
       }
       subList.push({
         item:{
@@ -234,7 +253,7 @@ const getBrowser = async (req, res) => {
           idtutor_list:s.item.idtutor_list,
           idsource_list:s.item.idsource_list,
           idcomment_list:s.item.idcomment_list,
-          idstory_list:s.item.idstory_list,
+          idstory_list:storiess.idstory_list,
         }
       ,
       refIndex:s.refIndex,
