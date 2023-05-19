@@ -182,6 +182,8 @@ const getBrowser = async (req, res) => {
     //Obtengo el filtro para saber en que base de datos buscar, sea User, Subject, Source, Event etc
     const {page, limit} = req.query;
     const { search_string } = req.body;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
     let searchResults = false;
     let results=[]
     let DB = false;
@@ -197,10 +199,12 @@ const getBrowser = async (req, res) => {
       let fuse = new Fuse(DB, options);
       searchResults = fuse.search(search_string);
       for (let i = 0 ; i<searchResults.length;i++){
-        searchResults[i].type="Tutor"
+        searchResults[i].type="tutor"
         searchResults[i].item.password="Invalid access"
       }
-      results.push(searchResults)
+      results.push({tutors:searchResults.flat().sort(function(a, b) {
+        return a.score - b.score;
+    }).slice(startIndex,endIndex) })
     
     
       DB = await Subject.find();
@@ -236,12 +240,14 @@ const getBrowser = async (req, res) => {
       ,
       refIndex:s.refIndex,
       score:s.score,
-      type:"Subject"
+      type:"subject"
     })
 
       }
      searchResults=subList
-     results.push(searchResults)
+     results.push({subjects:searchResults.flat().sort(function(a, b) {
+      return a.score - b.score;
+  }).slice(startIndex,endIndex) })
     
     
       DB = await Source.find();
@@ -272,21 +278,25 @@ const getBrowser = async (req, res) => {
       },
       refIndex:s.refIndex,
       score:s.score,
-      type:"Source"
+      type:"source"
     })
 
       }
      searchResults=sourList
-     results.push(searchResults)
+     results.push({sources:searchResults.flat().sort(function(a, b) {
+      return a.score - b.score;
+  }).slice(startIndex,endIndex) })
     
     
       DB = await Event.find();
        fuse = new Fuse(DB, options);
       searchResults = fuse.search(search_string);
       for(let i = 0; i<searchResults.length;i++){
-        searchResults[i].type="Event"
+        searchResults[i].type="event"
       }
-      results.push(searchResults)
+      results.push({events:searchResults.flat().sort(function(a, b) {
+        return a.score - b.score;
+    }).slice(startIndex,endIndex) })
     
 
     if (!searchResults) {
@@ -296,12 +306,9 @@ const getBrowser = async (req, res) => {
       });
     }
 
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
 
-     res.status(200).json({ results: results.flat().sort(function(a, b) {
-        return b.score - a.score;
-    }).slice(startIndex,endIndex) });
+
+     res.status(200).json({ results: results});
     
 
     
