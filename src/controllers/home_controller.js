@@ -196,6 +196,10 @@ const getBrowser = async (req, res) => {
       DB = await User.find({ role: "tutor" });
       let fuse = new Fuse(DB, options);
       searchResults = fuse.search(search_string);
+      for (let i = 0 ; i<searchResults.length;i++){
+        searchResults[i].type="Tutor"
+        searchResults[i].item.password="Invalid access"
+      }
       results.push(searchResults)
     
     
@@ -215,21 +219,24 @@ const getBrowser = async (req, res) => {
          url =  (await getSignedUrl(s3, command)).split("?")[0];
       }
       subList.push({
-        _id:s.item._id,
-        name:s.item.name,
-        credits:s.item.credits,
-        description:s.item.description,
-        category:s.item.category,
-        url_background_image:url,
-        difficulty_level:s.item.difficulty_level,
-        idfaculty:s.item.idfaculty,
-        idtutor_list:s.item.idtutor_list,
-        idsource_list:s.item.idsource_list,
-        idcomment_list:s.item.idcomment_list,
-        idstory_list:s.item.idstory_list
+        item:{
+          _id:s.item._id,
+          name:s.item.name,
+          credits:s.item.credits,
+          description:s.item.description,
+          category:s.item.category,
+          url_background_image:url,
+          difficulty_level:s.item.difficulty_level,
+          idfaculty:s.item.idfaculty,
+          idtutor_list:s.item.idtutor_list,
+          idsource_list:s.item.idsource_list,
+          idcomment_list:s.item.idcomment_list,
+          idstory_list:s.item.idstory_list,
+        }
       ,
       refIndex:s.refIndex,
-      score:s.score
+      score:s.score,
+      type:"Subject"
     })
 
       }
@@ -261,10 +268,11 @@ const getBrowser = async (req, res) => {
         category:s.item.category,
         url_file:url,
         idsubject:s.item.idsubject,
-        idcomment_list:s.item.idcomment_list
+        idcomment_list:s.item.idcomment_list,
       },
       refIndex:s.refIndex,
-      score:s.score
+      score:s.score,
+      type:"Source"
     })
 
       }
@@ -275,6 +283,9 @@ const getBrowser = async (req, res) => {
       DB = await Event.find();
        fuse = new Fuse(DB, options);
       searchResults = fuse.search(search_string);
+      for(let i = 0; i<searchResults.length;i++){
+        searchResults[i].type="Event"
+      }
       results.push(searchResults)
     
 
