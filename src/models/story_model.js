@@ -1,20 +1,24 @@
-const mongoose = require("mongoose");
+const mongoose = require("mongoose")
 
 const storySchema = new mongoose.Schema(
   {
     name: { type: String, require: true },
-    IDUser: { type: mongoose.Schema.ObjectId, ref: "User", require: true },
-    multimedia: { type: String, require: true }, //TODO:Especificar tipo de dato
-    ID_comment_list: [
+    iduser: { type: mongoose.Schema.ObjectId, ref: "User", require: true },
+    multimedia: { type: String, require: true },
+    idsubject:{type: mongoose.Schema.ObjectId,
+      ref: 'Subject',},//TODO:Especificar tipo de dato
+    idcomment_list: [
       {
         type: mongoose.Schema.ObjectId,
-        ref: "Comment",
+        ref: 'Comment',
       },
-    ],
+    ]
+   ,createdAt: { type: Date, expires: "24h", default: Date.now }
   },
   {
     versionKey: false,
   }
-);
 
-module.exports = mongoose.model("Story", storySchema);
+)
+
+module.exports = mongoose.model('Story', storySchema)
