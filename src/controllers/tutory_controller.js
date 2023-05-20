@@ -444,18 +444,13 @@ const createProcess = async (req, res, tutory) => {
   for (let i = 0; i < idstudent_list.length; i++) {
     const t = ((await User.findOne({ _id: idstudent_list[i] })))
     let idstudent = null
-
     let device_token=null
     if(t!= null){ 
       device_token= t.device_token
       idstudent = t._id.toString()
     }
-
     const task =  cron.schedule(`0 ${minute} ${hour - 1} * ${month}-${month_end} ${(d + 1) % 7}`,
-     async () => {
-      
-        let t = ((await User.findOne({ _id: idstudent_list[i] })))
-        
+     async () => {         
      
         const message = {
           data: { ruta: "tutory", id: tutory._id.toString() },
@@ -464,11 +459,11 @@ const createProcess = async (req, res, tutory) => {
             body: `Tutoría de ${tutory.name} empieza en 1 hora`,
           },
           token: device_token.toString(),
-        };
+        };  
         // Enviar el mensaje a través de FCM   
         admin
           .messaging()
-          .send(message)  
+          .send(message)   
           .then((response) => { 
             console.log("Enviado");
           })
