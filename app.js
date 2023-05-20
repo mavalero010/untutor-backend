@@ -13,6 +13,7 @@ const routerTutory = require("./src/routes/tutory_route")
 const routerAvatar = require("./src/routes/avatar_route")
 const routerBlog = require("./src/routes/blog_route")
 const routerStory = require("./src/routes/story_route")
+const routerPanel = require("./src/routes/panel_route")
 const sn = require("./send_notifications")
 const cors = require('cors');
 
@@ -45,6 +46,7 @@ app.use(routerSource)
 app.use(routerTutory)
 app.use(routerBlog)
 app.use(routerStory)
+app.use(routerPanel)
 
 app.listen(process.env.PORT, () => {
   console.log(`Example app listening on port ${process.env.PORT}`);
