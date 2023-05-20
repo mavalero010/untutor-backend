@@ -1,6 +1,7 @@
 const Subject = require("../models/subject_model");
 const Event = require("../models/event_model");
 const User = require("../models/user_model");
+const Blog = require("../models/blog_model");
 const Story = require("../models/story_model");
 const Phrase = require("../models/phrase_model");
 const Source = require("../models/source_model")
@@ -316,6 +317,16 @@ const getBrowser = async (req, res) => {
         return a.score - b.score;
     }).slice(startIndex,endIndex) 
     
+    
+    DB = await Blog.find();
+    fuse = new Fuse(DB, options);
+   searchResults = fuse.search(search_string);
+   for(let i = 0; i<searchResults.length;i++){
+     searchResults[i].type="Blog"
+   }
+   results.blogs=searchResults.flat().sort(function(a, b) {
+     return a.score - b.score;
+ }).slice(startIndex,endIndex) 
 
     if (!searchResults) {
      return res.status(200).json({
