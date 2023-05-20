@@ -443,17 +443,19 @@ const createProcess = async (req, res, tutory) => {
   //recordar cada semana
   for (let i = 0; i < idstudent_list.length; i++) {
     const t = ((await User.findOne({ _id: idstudent_list[i] })))
+    let idstudent = null
+
+    let device_token=null
+    if(t!= null){ 
+      device_token= t.device_token
+      idstudent = t._id.toString()
+    }
 
     const task =  cron.schedule(`0 ${minute} ${hour - 1} * ${month}-${month_end} ${(d + 1) % 7}`,
      async () => {
       
-        const t = ((await User.findOne({ _id: idstudent_list[i] })))
+        let t = ((await User.findOne({ _id: idstudent_list[i] })))
         
-        let device_token=null
-        if(t!= null){ 
-          device_token= t.device_token
-       
-        }
      
         const message = {
           data: { ruta: "tutory", id: tutory._id.toString() },
@@ -479,7 +481,7 @@ const createProcess = async (req, res, tutory) => {
         timezone: "America/Bogota",
       }
     );
-    crons.push({ id: tutory._id.toString(),idstudent:t._id.toString(), task });
+    crons.push({ id: tutory._id.toString(),idstudent, task });
     
   }
   
