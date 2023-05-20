@@ -16,7 +16,7 @@ const routerStory = require("./src/routes/story_route")
 const routerPanel = require("./src/routes/panel_route")
 const sn = require("./send_notifications")
 const cors = require('cors');
-
+ 
 connectDB();
 
 const app = express();
