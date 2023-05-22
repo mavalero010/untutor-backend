@@ -23,5 +23,11 @@ routerUser.get(`/api/${process.env.VERSION_API}/panel/faculties`, panelControlle
 routerUser.get(`/api/${process.env.VERSION_API}/panel/faculties/:id`, panelController.getFacultiesByIdUniversities)
 routerUser.delete(`/api/${process.env.VERSION_API}/panel/faculties/faculty/:id`, panelController.deleteFacultyById)
 
+//subjects
+routerUser.post(`/api/${process.env.VERSION_API}/panel/subjects/subject`, panelController.postSubject)
+routerUser.get(`/api/${process.env.VERSION_API}/panel/subjects/subject/:id`, panelController.getSubjectById)
+routerUser.get(`/api/${process.env.VERSION_API}/panel/subjects`, panelController.getSubjects)
+routerUser.get(`/api/${process.env.VERSION_API}/panel/subjects/:id`, panelController.getSubjectsByIdFaculties)
+routerUser.delete(`/api/${process.env.VERSION_API}/panel/subjects/subject/:id`, panelController.deleteSubjectById)
 
 module.exports = routerUser
