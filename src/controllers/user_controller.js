@@ -360,7 +360,8 @@ const addIdCommentAtList = async (req, res) => {
 
     //Obtengo el target para saber en que base de datos buscar, sea Story, Source, Subject
     const { target } = req.query;
-    const { comment, idauthor, idtarget } = req.body;
+    const { comment, idtarget } = req.body;
+    const idauthor = user._id
     const com = new Comment({ comment, idauthor, idtarget });
 
     if (target === "story") {
@@ -961,8 +962,68 @@ const deleteUser= async (req,res)=>{
         msg: "Token inválido",
       });
     }
-    const u=await User.deleteOne({_id:user._id})
-    res.status(200).json(u)
+    let cont=0
+
+    const idcomment = await Comment.find({idauthor:user._id})
+    .catch((err) => {
+      return res.status(400).json({
+        success: false,
+        msg: "Error",
+      });
+    });
+
+    const tutories = await Tutory.find({
+      idstudent_list: {
+        $elemMatch: { $eq: user._id },
+      },
+    })
+    .catch((err) => {
+      return res.status(400).json({
+        success: false,
+        msg: "Error tutories",
+      });
+    });
+    console.log("ac")
+    for(let t = 0; t<tutories.length;t++){
+      await Tutory.findOneAndUpdate(
+        { _id: tutories[t]._id },
+        { $pull: { idstudent_list: user._id } }
+      ).catch((err) => {
+          return res.status(400).json({
+            success: false,
+            msg: "Error eliminando user id de lista en tutory",
+          });
+        });      
+    }
+
+    console.log("a")
+   for(let i=0;i<idcomment.length;i++){
+    await Subject.findOneAndUpdate(
+      { _id: idcomment[i].idtarget },
+      { $pull: { idcomment_list: idcomment[i]._id } }
+    ).catch((err) => {
+        return res.status(400).json({
+          success: false,
+          msg: "Error eliminando comentario de lista en Subject",
+        });
+      });
+   }
+console.log("acc")
+
+    await Comment.deleteOne({idauthor:user._id}).catch((err) => {
+        return res.status(400).json({
+          success: false,
+          msg: "Error eliminando comentario de base de datos",
+        });
+      })
+
+    const u=await User.deleteOne({_id:user._id}).catch((err) => {
+      return res.status(400).json({
+        success: false,
+        msg: "Error eliminando Usuario",
+      });
+    });
+    res.status(200).json({msg:"Usuario eliminado"})
   } catch (error) {
     res.status(500).json({ succes: false, msg: "Error en servidor" });
   }

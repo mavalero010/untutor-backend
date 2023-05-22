@@ -332,7 +332,6 @@ const deleteComment=async(req,res)=>{
             msg: "Error eliminando comentario de lista en Subject",
           });
         });
-        console.log("aca")
       await Comment.deleteOne({ _id: idcomment })
         .then((data) => result.push(data))
         .catch((err) => {
