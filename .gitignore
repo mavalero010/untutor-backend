@@ -1,7 +1,5 @@
 node_modules/
-.env
 package-lock.json
 *.log
 *.gz
 google-services.json
-untutor-notifications-firebase-adminsdk-xmbpo-01e725a99a.json

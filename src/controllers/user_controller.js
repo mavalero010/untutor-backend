@@ -983,7 +983,6 @@ const deleteUser= async (req,res)=>{
         msg: "Error tutories",
       });
     });
-    console.log("ac")
     for(let t = 0; t<tutories.length;t++){
       await Tutory.findOneAndUpdate(
         { _id: tutories[t]._id },
@@ -996,7 +995,6 @@ const deleteUser= async (req,res)=>{
         });      
     }
 
-    console.log("a")
    for(let i=0;i<idcomment.length;i++){
     await Subject.findOneAndUpdate(
       { _id: idcomment[i].idtarget },
@@ -1008,7 +1006,7 @@ const deleteUser= async (req,res)=>{
         });
       });
    }
-console.log("acc")
+
 
     await Comment.deleteOne({idauthor:user._id}).catch((err) => {
         return res.status(400).json({
