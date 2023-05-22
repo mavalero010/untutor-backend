@@ -19,55 +19,6 @@ const dotenv = require("dotenv");
 dotenv.config();
 const saltRounds = parseInt(process.env.SALT_ROUNDS_ENCRYPT_PASSWORD);
 
-
-const loginAdmin = async (req, res) => {
-    try {
-    //Obtengo datos desde el front
-    const { email, password } = req.body;
-
-    //Obtengo datos de usuario
-
-    let admin = (await Admin.findOne({ email })) || null;
-
-    if (admin === null) {
-      return res.status(404).json({
-        success: false,
-        msg: "Administrador no existe",
-      });
-    }
-    //Verificar que los datos son válidos
-    const compare = await bcrypt.compare(password, admin.password);
-
-    if (!compare) {
-      return res.status(401).json({
-        success: false,
-        msg: "Contraseña Inválida",
-      });
-    }
-    //Validar que el usuario esté verificado
-    if (!admin.active) {
-      return res.status(403).json({
-        success: false,
-        msg: "Usuario inhabilitado",
-      });
-    }
-
-    //Genera el token
-    const token = getUnexpiredToken({ email, password });
-
-    //TODO: Buscar campos de seguridad extras para añadir al login, sea mensajes por SMS o autenticacion por huella digital
-    return res.status(200).json({
-      token,
-      admin,
-    });
-
-    } catch (error) {
-        res.status(500).json({
-            msg: "Error iniciando sesión de admin",
-          });
-    }
-};
-
 const postBlog =async(req,res)=>{
   try {
     //verificar token
@@ -176,7 +127,7 @@ const postUser=async(req,res)=>{
     }
   }
 
-const getUsers =async(req,res)=>{
+const getUsersByIdUniversities =async(req,res)=>{
   try {
     //verificar token
     const token = req.headers.authorization.split(" ")[1];
@@ -240,7 +191,7 @@ const getUserById =async(req,res)=>{
 
 const patchUsers =async(req,res)=>{
   try {
-      const usuario = await UsuarioModel.findOneAndUpdate({ _id: req.params.id}, req.body);
+      const usuario = await User.findOneAndUpdate({ _id: req.params.id}, req.body);
       const resultado = await usuario.save();
       res.status(200).json(resultado);
   } catch (err) {
@@ -307,6 +258,7 @@ const getUniversities = async(req,res)=>{
   }
 }
 
+//faculties
 const getFaculties = async(req,res)=>{
   try {
     //verificar token
@@ -338,14 +290,168 @@ const getFaculties = async(req,res)=>{
   }
 }
 
+const postFaculty=async(req,res)=>{
+  try {
+      //verificar token
+      const token = req.headers.authorization.split(" ")[1];
+      if (!token) {
+        return res.status(401).json({ message: "No se proporcionó un token" });
+      }
+      const dataAdminDecoded = getTokenData(token);
+      const mail = dataAdminDecoded.data.email;
+      let admin = (await Admin.findOne({ email: mail })) || null;
+      const validateInfo = authTokenDecoded(dataAdminDecoded, admin)
+      if (!validateInfo) {
+          return res.status(401).json({
+              success: false,
+              msg: "Admin no existe, token inválido",
+          });
+      }
+      //endpoint
+      let {
+        name,
+        description,
+        iduniversity
+      } = req.body;
+     
+      let faculty = (await Faculty.findOne({ name })) || null;
+      if (faculty !== null) {
+        return res.status(409).json({
+          success: false,
+          msg: "ya registrado",
+        });
+      }
+      faculty = new Faculty({
+        name,
+        description,
+        iduniversity
+      });
+  
+      await faculty.save().then((data) =>
+        res.status(200).json({
+          data,
+          success: true,
+          msg: "Facultad registrado",
+        })
+      );
+  
+    } catch (error) {
+      res.status(500).json({ msg: "Error en servidor " });
+    }
+  }
+
+const getFacultiesByIdUniversities =async(req,res)=>{
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //endpoint
+    const facultad = await Faculty.find({iduniversity:req.params.id})
+    res.status(200).json(facultad);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      msg: "Admin no existe, token inválido",
+    });
+  }
+}
+
+const getFacultyById =async(req,res)=>{
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //endpoint
+    const facultad = await Faculty.findById(req.params.id)
+    res.status(200).json(facultad);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      msg: "Admin no existe, token inválido",
+    });
+  }
+}
+
+const patchFaculty =async(req,res)=>{
+  try {
+      const facultad = await Faculty.findOneAndUpdate({ _id: req.params.id}, req.body);
+      const resultado = await facultad.save();
+      res.status(200).json(resultado);
+  } catch (err) {
+      res.status(500).json(err);
+  }
+}
+
+const deleteFacultyById =async(req,res)=>{
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //endpoint
+    const facultad = await Faculty.findByIdAndDelete(req.params.id)
+    res.status(200).json(facultad);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+}
+
 module.exports = {
-  loginAdmin,
   postBlog,
   postUser,
-  getUsers,
+  getUsersByIdUniversities,
   getUserById,
   patchUsers,
   deleteUserById,
   getUniversities,
-  getFaculties
+  getFaculties,
+  postFaculty,
+  getFacultiesByIdUniversities,
+  getFacultyById,
+  patchFaculty,
+  deleteFacultyById
 };
