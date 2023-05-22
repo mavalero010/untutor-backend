@@ -5,6 +5,7 @@ const University = require("../models/university_model");
 const Faculty = require("../models/faculty_model");
 const Subject = require("../models/subject_model");
 const Comment =require("../models/comment_model")
+const Eventos = require("../models/event_model");
 
 const bcrypt = require("bcrypt");
 const {
@@ -18,38 +19,38 @@ const dotenv = require("dotenv");
 dotenv.config();
 const saltRounds = parseInt(process.env.SALT_ROUNDS_ENCRYPT_PASSWORD);
 
-const postBlog =async(req,res)=>{
+//users
+const getUsers = async(req,res)=>{
   try {
     //verificar token
     const token = req.headers.authorization.split(" ")[1];
     if (!token) {
-      return res.status(401).json({ message: "No se proporcionó un token" });
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
     }
     const dataAdminDecoded = getTokenData(token);
     const mail = dataAdminDecoded.data.email;
     let admin = (await Admin.findOne({ email: mail })) || null;
-    const validateInfo = authTokenDecoded(dataAdminDecoded, admin)
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
     if (!validateInfo) {
-        return res.status(401).json({
-            success: false,
-            msg: "Admin no existe, token inválido",
-        });
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
     }
     //endpoint
-    const {name,description,category,publication_day,date_init}=req.body
-    const blog = new Blog({name,description,category,publication_day,date_init})
-    await blog.save().then((data) =>
-    res.status(200).json({
-        data,
-        success: true,
-        msg: "Blog creado",
-    }))
-  } catch (error) {
-    res.status(500).json({ succes: false, msg: "Error en servidor" });
+    const usuario = await User.find()
+    res.status(200).json(usuario);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      msg: "Admin no existe, token inválido",
+    });
   }
 }
 
-//users
 const postUser=async(req,res)=>{
   try {
       //verificar token
@@ -452,8 +453,8 @@ const getSubjects = async(req,res)=>{
       });
     }
     //endpoint
-    const subject = await Subject.find()
-    res.status(200).json(subject);
+    const materia = await Subject.find()
+    res.status(200).json(materia);
   } catch (err) {
     res.status(500).json({
       success: false,
@@ -608,9 +609,376 @@ const deleteSubjectById =async(req,res)=>{
   }
 }
 
+//events
+const getEvents = async(req,res)=>{
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //endpoint
+    const evento = await Eventos.find()
+    res.status(200).json(evento);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      msg: "Admin no existe, token inválido",
+    });
+  }
+}
+
+const postEvent=async(req,res)=>{
+  try {
+      //verificar token
+      const token = req.headers.authorization.split(" ")[1];
+      if (!token) {
+        return res.status(401).json({ message: "No se proporcionó un token" });
+      }
+      const dataAdminDecoded = getTokenData(token);
+      const mail = dataAdminDecoded.data.email;
+      let admin = (await Admin.findOne({ email: mail })) || null;
+      const validateInfo = authTokenDecoded(dataAdminDecoded, admin)
+      if (!validateInfo) {
+          return res.status(401).json({
+              success: false,
+              msg: "Admin no existe, token inválido",
+          });
+      }
+      //endpoint
+      let {
+        name,
+        category,
+        date_init,
+        priority,
+        publication_day,
+        description
+      } = req.body;
+     
+      let evento = new Eventos({
+        name,
+        category,
+        date_init,
+        priority,
+        publication_day,
+        description
+      });
+      await evento.save().then((data) =>
+        res.status(200).json({
+          data,
+          success: true,
+          msg: "Evento registrado",
+        })
+      );
+  
+    } catch (error) {
+      res.status(500).json({ msg: "Error en servidor " });
+    }
+}
+
+const getEventById =async(req,res)=>{
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //endpoint
+    const evento = await Eventos.findById(req.params.id)
+    res.status(200).json(evento);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      msg: "Admin no existe, token inválido",
+    });
+  }
+}
+
+const deleteEventById =async(req,res)=>{
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //endpoint
+    const evento = await Eventos.findByIdAndDelete(req.params.id)
+    res.status(200).json(evento);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+}
+
+//blogs
+const getBlogs = async(req,res)=>{
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //endpoint
+    const blog = await Blog.find()
+    res.status(200).json(blog);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      msg: "Admin no existe, token inválido",
+    });
+  }
+}
+
+const postBlog=async(req,res)=>{
+  try {
+      //verificar token
+      const token = req.headers.authorization.split(" ")[1];
+      if (!token) {
+        return res.status(401).json({ message: "No se proporcionó un token" });
+      }
+      const dataAdminDecoded = getTokenData(token);
+      const mail = dataAdminDecoded.data.email;
+      let admin = (await Admin.findOne({ email: mail })) || null;
+      const validateInfo = authTokenDecoded(dataAdminDecoded, admin)
+      if (!validateInfo) {
+          return res.status(401).json({
+              success: false,
+              msg: "Admin no existe, token inválido",
+          });
+      }
+      //endpoint
+      let {
+        name,
+        description,
+        category,
+        publication_day,
+        date_init
+      } = req.body;
+     
+      let blog = new Blog({
+        name,
+        description,
+        category,
+        publication_day,
+        date_init
+      });
+      await blog.save().then((data) =>
+        res.status(200).json({
+          data,
+          success: true,
+          msg: "Blog registrado",
+        })
+      );
+  
+    } catch (error) {
+      res.status(500).json({ msg: "Error en servidor " });
+    }
+}
+
+const getBlogById =async(req,res)=>{
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //endpoint
+    const blog = await Blog.findById(req.params.id)
+    res.status(200).json(blog);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      msg: "Admin no existe, token inválido",
+    });
+  }
+}
+
+const deleteBlogById =async(req,res)=>{
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //endpoint
+    const blog = await Blog.findByIdAndDelete(req.params.id)
+    res.status(200).json(blog);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+}
+
+//comments
+const getComments = async(req,res)=>{
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //endpoint
+    const comentario = await Comment.find()
+    res.status(200).json(comentario);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      msg: "Admin no existe, token inválido",
+    });
+  }
+}
+
+const getCommentById =async(req,res)=>{
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //endpoint
+    const comentario = await Comment.findById(req.params.id)
+    res.status(200).json(comentario);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      msg: "Admin no existe, token inválido",
+    });
+  }
+}
+
+const deleteCommentById =async(req,res)=>{
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //endpoint
+    const comentario = await Comment.findByIdAndDelete(req.params.id)
+    res.status(200).json(comentario);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+}
+
 module.exports = {
-  postBlog,
   //users
+  getUsers,
   postUser,
   getUsersByIdUniversities,
   getUserById,
@@ -627,5 +995,19 @@ module.exports = {
   getSubjectsByIdFaculties,
   postSubject,
   getSubjectById,
-  deleteSubjectById
+  deleteSubjectById,
+  //events
+  getEvents,
+  postEvent,
+  getEventById,
+  deleteEventById,
+  //blogs
+  getBlogs,
+  postBlog,
+  getBlogById,
+  deleteBlogById,
+  //comments
+  getComments,
+  getCommentById,
+  deleteCommentById,
 };
