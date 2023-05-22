@@ -514,6 +514,9 @@ const getSubjectById = async (req, res) => {
     let tutors = await User.find({ role: "tutor" });
     let stories = await Story.find({ idsubject });
     let faculty = await Faculty.findOne({ _id: subject.idfaculty });
+    if (faculty === null) {
+      return res.status(404).json({ msg: "Faculty no existe" });
+    }
     let comments = await Comment.find({ idtarget: idsubject });
     let authors = await User.find({ role: "student" });
       let comms=[]
