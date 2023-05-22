@@ -8,6 +8,7 @@ const routerUser = Router()
 
 routerUser.post(`/api/${process.env.VERSION_API}/panel/blog`, panelController.postBlog)
 
+routerUser.post(`/api/${process.env.VERSION_API}/panel/users/user`, panelController.postUser)
 routerUser.get(`/api/${process.env.VERSION_API}/panel/users/user/:id`, panelController.getUserById)
 routerUser.get(`/api/${process.env.VERSION_API}/panel/users/:id`, panelController.getUsers)
 routerUser.delete(`/api/${process.env.VERSION_API}/panel/users/user/:id`, panelController.deleteUserById)

@@ -99,6 +99,83 @@ const postBlog =async(req,res)=>{
   }
 }
 
+const postUser=async(req,res)=>{
+  try {
+      //verificar token
+      const token = req.headers.authorization.split(" ")[1];
+      if (!token) {
+        return res.status(401).json({ message: "No se proporcionó un token" });
+      }
+      const dataAdminDecoded = getTokenData(token);
+      const mail = dataAdminDecoded.data.email;
+      let admin = (await Admin.findOne({ email: mail })) || null;
+      const validateInfo = authTokenDecoded(dataAdminDecoded, admin)
+      if (!validateInfo) {
+          return res.status(401).json({
+              success: false,
+              msg: "Admin no existe, token inválido",
+          });
+      }
+      //endpoint
+      let {
+        name,
+        iduniversity,
+        email,
+        password,
+        gender,
+        birthday,
+        biography,
+        role,
+        idfaculty,
+        city_of_birth,
+        perfil_photo,
+        idfavorite_subjects,
+        phone,
+        device_token
+      } = req.body;
+     
+      //Encripta clave
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      password = hashedPassword;
+      // Verificar que el usuario no exista
+      let user = (await User.findOne({ email })) || null;
+      if (user !== null) {
+        return res.status(409).json({
+          success: false,
+          msg: "Email ya registrado",
+        });
+      }
+      user = new User({
+        name,
+        iduniversity,
+        email,
+        gender,
+        birthday,
+        biography,
+        active:true,
+        role,
+        idfaculty,
+        city_of_birth,
+        perfil_photo,
+        password,
+        idfavorite_subjects,
+        phone,
+        device_token
+      });
+  
+      await user.save().then((data) =>
+        res.status(200).json({
+          data,
+          success: true,
+          msg: "Usuario registrado",
+        })
+      );
+  
+    } catch (error) {
+      res.status(500).json({ msg: "Error en servidor " });
+    }
+  }
+
 const getUsers =async(req,res)=>{
   try {
     //verificar token
@@ -264,6 +341,7 @@ const getFaculties = async(req,res)=>{
 module.exports = {
   loginAdmin,
   postBlog,
+  postUser,
   getUsers,
   getUserById,
   patchUsers,
