@@ -7,7 +7,7 @@ const eventSchema = new mongoose.Schema(
       category: { type: String, require: true },
       publication_day: { type: String, require: true }, //Dia de publicación de notificación
       date_init: { //Día de inicio del evento 
-        type: String,
+        type: Date,
         require: true,
       },
       priority:{type:Boolean, require:true}

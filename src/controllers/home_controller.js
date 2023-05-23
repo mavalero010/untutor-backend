@@ -129,7 +129,7 @@ const getHome = async (req, res) => {
         date_init: e.date_init,
       };
     });
-    
+
     if (events.length >= 6) {
       events = events
         .sort(function () {
