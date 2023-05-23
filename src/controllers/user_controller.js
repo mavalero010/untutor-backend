@@ -1066,7 +1066,7 @@ const createStory = async (req, res, file) => {
     }
     const { name, idsubject } = req.body;
     let imageName = null
-    if(file.originalname!==undefined){
+    if(file!==undefined){
        imageName = file.originalname;
       const params = {
         Bucket: bucketSource,
