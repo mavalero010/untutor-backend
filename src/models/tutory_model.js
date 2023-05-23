@@ -20,7 +20,7 @@ const tutorySchema = new mongoose.Schema(
     },
     date_start: { type: String, require: true },
     date_end: { type: String, require: true },
-    duration: { type: String, require: true },
+    duration: { type: Number, require: true },
     device_token: { type: String },
     location: { type: String, require: true },
     is_virtual: { type: Boolean, require: true },

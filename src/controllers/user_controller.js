@@ -751,7 +751,7 @@ const getUserById = async (req, res) => {
         };
         const command = new GetObjectCommand(getObjectParams);
         urlsss = (await getSignedUrl(s3, command)).split("?")[0]
-        sss.push({_id:s._id,name:s.name,url_background_image:urlsss,tutors:s.idtutor_list.length})
+        sss.push({_id:s._id,name:s.name,url_background_image:urlsss})
       }
     }
     const tutories = await Tutory.find({
@@ -784,7 +784,7 @@ let ss=[]
       birthday: us.birthday,
       biography: us.biography,
       role: us.role,
-      faculty: { _id: faculty._id, name: faculty.name },
+      faculty: faculty._id,
       city_of_birth: us.city_of_birth,
       perfil_photo: url,
       subjects: sss,
@@ -794,7 +794,7 @@ let ss=[]
     }
 
 
-    res.status(200).json({user:user_res});
+    res.status(200).json({user:user_res,token});
   } catch (error) {
     res.status(500).json({ succes: false, msg: "Error en servidor" });
   }
