@@ -129,6 +129,7 @@ const getHome = async (req, res) => {
         date_init: e.date_init,
       };
     });
+    
     if (events.length >= 6) {
       events = events
         .sort(function () {
@@ -143,7 +144,7 @@ const getHome = async (req, res) => {
     res.status(200).json({
       mantra: phrase.content,
       subjects,
-      events: events.filter((d) => d.date_init > Date.now()),
+      events: events.filter((d) => new Date(d.date_init) > Date.now()),
     });
   } catch (error) {
     return res.status(500).json({
