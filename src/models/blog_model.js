@@ -7,7 +7,7 @@ const blogSchema = new mongoose.Schema(
       category: { type: String, require: true },
       publication_day: { type: String, require: true },
       date_init: {
-        type: String,
+        type: Date,
         require: true,
       }
     },

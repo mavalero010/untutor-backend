@@ -5,7 +5,7 @@ const Admin = require("../models/admin_model");
 const Faculty = require("../models/faculty_model");
 const Comment = require("../models/comment_model");
 const Story = require("../models/story_model");
-const ObjectId = require('mongodb').ObjectId;
+const ObjectId = require("mongodb").ObjectId;
 const { getTokenData, authTokenDecoded } = require("../config/jwt.config");
 
 const multer = require("multer");
@@ -23,9 +23,9 @@ const dotenv = require("dotenv");
 dotenv.config();
 const saltRounds = parseInt(process.env.SALT_ROUNDS_ENCRYPT_PASSWORD);
 const bucketProfilePhoto = process.env.BUCKET_PROFILE_PHOTO;
-const bucketSource=process.env.BUCKET_SOURCE_UNTUTOR
+const bucketSource = process.env.BUCKET_SOURCE_UNTUTOR;
 const bucketRegion = process.env.BUCKET_REGION;
-const accessKey = process.env.AWS_ACCESS_KEY;
+const accessKey = process.env.AWS_ACCESS_KEY_BACKEND;
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
 const s3 = new S3Client({
   credentials: {
@@ -93,7 +93,11 @@ const getAllSubjects = async (req, res) => {
         description: s.description,
         url_background_image: url,
         difficulty_level: s.difficulty_level,
-        faculty: faculties.filter(f=> f.equals(s.idfaculty)).map(fa=>{return{_id:fa._id,name:fa.name}})[0],
+        faculty: faculties
+          .filter((f) => f.equals(s.idfaculty))
+          .map((fa) => {
+            return { _id: fa._id, name: fa.name };
+          })[0],
         tutors: tutors
           .filter((t) => s.idtutor_list.indexOf(t._id) !== -1)
           .map((tu) => {
@@ -139,7 +143,6 @@ const getAllSubjectsByID_Faculty = async (req, res) => {
     const { docs, totalPages } = myData;
     const results = [];
     for (d of docs) {
-      
       const getObjectParams = {
         Bucket: bucketProfilePhoto,
         Key: d.url_background_image,
@@ -259,13 +262,8 @@ const updateSubject = async (req, res) => {
       });
     }
     const { idsubject } = req.query;
-    const {
-      name,
-      credits,
-      description,
-      difficulty_level,
-      idfaculty,
-    } = req.body;
+    const { name, credits, description, difficulty_level, idfaculty } =
+      req.body;
 
     const subject =
       (await Subject.findByIdAndUpdate(
@@ -457,7 +455,7 @@ const uploadBackgroundImageSubject = async (req, res, file) => {
     const buffer = await sharp(file.buffer)
       .resize({ height: 1920, width: 1080, fit: "contain" })
       .toBuffer();
-    const imageName = file.originalname
+    const imageName = file.originalname;
     const params = {
       Bucket: bucketProfilePhoto,
       Key: imageName,
@@ -510,88 +508,100 @@ const getSubjectById = async (req, res) => {
     if (subject === null) {
       return res.status(404).json({ msg: "Subject no existe" });
     }
-    let favorites=await User.find({idfavorite_subjects: { $elemMatch: { $eq: idsubject } }})
+    let favorites = await User.find({
+      idfavorite_subjects: { $elemMatch: { $eq: idsubject } },
+    });
     let tutors = await User.find({ role: "tutor" });
     let stories = await Story.find({ idsubject });
     let faculty = await Faculty.findOne({ _id: subject.idfaculty });
+    if (faculty === null) {
+      return res.status(404).json({ msg: "Faculty no existe" });
+    }
     let comments = await Comment.find({ idtarget: idsubject });
     let authors = await User.find({ role: "student" });
-      let comms=[]
-      let tam=0
-      if(comments.length-4<0){
-          tam=0
-      }else{
-        tam = comments.length-4
-      }
-    for(let co = tam;co<comments.length;co++){
-      let au = {}
-      for(let i = 0;i<authors.length;i++){
-        let url = null
+    let comms = [];
+    let tam = 0;
+    if (comments.length - 4 < 0) {
+      tam = 0;
+    } else {
+      tam = comments.length - 4;
+    }
+    for (let co = tam; co < comments.length; co++) {
+      let au = {};
+      for (let i = 0; i < authors.length; i++) {
+        let url = null;
         if (authors[i].perfil_photo !== null) {
           const getObjectParams = {
             Bucket: bucketProfilePhoto,
             Key: authors[i].perfil_photo,
           };
-    
+
           const command = new GetObjectCommand(getObjectParams);
-           url = (await getSignedUrl(s3, command)).split("?")[0];
-        
+          url = (await getSignedUrl(s3, command)).split("?")[0];
         }
-        if(authors[i]._id.equals(comments[co].idauthor)){
-         
-          au={_id: authors[i]._id,
+        if (authors[i]._id.equals(comments[co].idauthor)) {
+          au = {
+            _id: authors[i]._id,
             name: authors[i].name,
-            perfil_photo: url}
-          
+            perfil_photo: url,
+          };
         }
       }
       comms.push({
         _id: comments[co]._id,
         comment: comments[co].comment,
-        author:au,
-        date:comments[co].date
-      })
+        author: au,
+        date: comments[co].date,
+      });
     }
     /*stories.map((s) => {
         return { _id: s._id, name: s.name, multimedia: s.multimedia };
       }),*/
-      let tamS=0
-      let ss=[]
-      if(stories.length-4<0){
-        tamS=0
-      }else{
-        tamS = stories.length-4
+    let tamS = 0;
+    let ss = [];
+    if (stories.length - 4 < 0) {
+      tamS = 0;
+    } else {
+      tamS = stories.length - 4;
+    }
+    for (let i = tamS; i < stories.length; i++) {
+      let urlS = null;
+
+      if (stories[i].multimedia !== null) {
+        const getObjectParams = {
+          Bucket: bucketSource,
+          Key: stories[i].multimedia,
+        };
+        const command = new GetObjectCommand(getObjectParams);
+        urlS = (await getSignedUrl(s3, command)).split("?")[0];
       }
-      for(let i=tamS;i<stories.length;i++){
-        let urlS=null
-        
-        if (stories[i].multimedia !== null) {
-          const getObjectParams = {
-            Bucket: bucketSource,
-            Key: stories[i].multimedia,
-          };
-          const command = new GetObjectCommand(getObjectParams);
-          urlS = (await getSignedUrl(s3, command)).split("?")[0];
-          }
-          let urlProfilePhotoUser=null
-          const ustemp = await User.findOne({_id:stories[i].iduser})
-          if (ustemp.perfil_photo !== null) {
-            const getObjectParams = {
-              Bucket: bucketProfilePhoto,
-              Key: ustemp.perfil_photo,
-            };
-      
-            const command = new GetObjectCommand(getObjectParams);
-            urlProfilePhotoUser = (await getSignedUrl(s3, command)).split("?")[0];
-          
-          }
-          ss.push({_id: stories[i]._id, message: stories[i].name, multimedia: urlS, author:{_id:ustemp._id,perfil_photo:urlProfilePhotoUser,name:ustemp.name}})
+      let urlProfilePhotoUser = null;
+      const ustemp = await User.findOne({ _id: stories[i].iduser });
+      if (ustemp.perfil_photo !== null) {
+        const getObjectParams = {
+          Bucket: bucketProfilePhoto,
+          Key: ustemp.perfil_photo,
+        };
+
+        const command = new GetObjectCommand(getObjectParams);
+        urlProfilePhotoUser = (await getSignedUrl(s3, command)).split("?")[0];
       }
-    let sources= await Source.find({idsubject})
-    let isfavorite=false
-    user.idfavorite_subjects.forEach(element => {
-      if(element.toString()==idsubject){
-        isfavorite=true
+      ss.push({
+        _id: stories[i]._id,
+        message: stories[i].name,
+        multimedia: urlS,
+        author: {
+          _id: ustemp._id,
+          perfil_photo: urlProfilePhotoUser,
+          name: ustemp.name,
+        },
+      });
+    }
+    let sources = await Source.find({ idsubject });
+    let isfavorite = false;
+    user.idfavorite_subjects.forEach((element) => {
+      if (element.toString() == idsubject) {
+        isfavorite = true;
       }
     });
 
@@ -618,11 +628,13 @@ const getSubjectById = async (req, res) => {
         .map((tu) => {
           return { _id: tu._id, name: tu.name };
         }),
-      stories:ss,
+      stories: ss,
       comments: comms,
-      sources:sources.map(s=>{return {name:s.name,url:s.url_file}}).length,
+      sources: sources.map((s) => {
+        return { name: s.name, url: s.url_file };
+      }).length,
       isfavorite,
-      likes:favorites.length
+      likes: favorites.length,
     };
 
     res.json(s);
