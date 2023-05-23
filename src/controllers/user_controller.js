@@ -31,9 +31,9 @@ const dotenv = require("dotenv");
 dotenv.config();
 const saltRounds = parseInt(process.env.SALT_ROUNDS_ENCRYPT_PASSWORD);
 const bucketProfilePhoto = process.env.BUCKET_PROFILE_PHOTO;
-const bucketSource=process.env.BUCKET_SOURCE_UNTUTOR
+const bucketSource = process.env.BUCKET_SOURCE_UNTUTOR;
 const bucketRegion = process.env.BUCKET_REGION;
-const accessKey = process.env.AWS_ACCESS_KEY;
+const accessKey = process.env.AWS_ACCESS_KEY_BACKEND;
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
 const s3 = new S3Client({
   credentials: {
@@ -67,7 +67,7 @@ const registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     // Verificar que el usuario no exista
-    let user = (await User.findOne({ email })) ;
+    let user = await User.findOne({ email });
     let unverifiedUser = (await UnverifiedUser.findOne({ email })) || null;
     if (user !== null) {
       return res.status(409).json({
@@ -238,7 +238,7 @@ const login = async (req, res) => {
         msg: "Usuario inhabilitado",
       });
     }
-    if (user.role!=="student") {
+    if (user.role !== "student") {
       return res.status(401).json({
         success: false,
         msg: "Usario no es tipo estudiante",
@@ -254,14 +254,14 @@ const login = async (req, res) => {
         //ACL:'public-read'
       };
       const command = new GetObjectCommand(getObjectParams);
-      
+
       url = (await getSignedUrl(s3, command)).split("?")[0];
     }
-    const university = await University.findOne({_id:user.iduniversity})
-    await User.updateOne({ _id: user._id }, { device_token})
+    const university = await University.findOne({ _id: user.iduniversity });
+    await User.updateOne({ _id: user._id }, { device_token });
     return res.status(200).json({
       token,
-      user:{
+      user: {
         _id: user._id,
         name: user.name,
         university: { name: university.name, _id: university._id },
@@ -361,7 +361,7 @@ const addIdCommentAtList = async (req, res) => {
     //Obtengo el target para saber en que base de datos buscar, sea Story, Source, Subject
     const { target } = req.query;
     const { comment, idtarget } = req.body;
-    const idauthor = user._id
+    const idauthor = user._id;
     const com = new Comment({ comment, idauthor, idtarget });
 
     if (target === "story") {
@@ -583,7 +583,7 @@ const uploadProfilePhoto = async (req, res, file) => {
         msg: "Válido solo para rol student",
       });
     }
-    const imageName = file.originalname
+    const imageName = file.originalname;
     /*Key: filename,
   Body: fs.createReadStream(filepath),
   Bucket: Constant.AWS_S3_BUCKET,
@@ -599,10 +599,10 @@ const uploadProfilePhoto = async (req, res, file) => {
     await s3.send(command);
     const u = await User.findByIdAndUpdate(
       { _id: user.id },
-      {perfil_photo: imageName },
+      { perfil_photo: imageName },
       { new: true }
     );
-    const university = await University.findOne({_id:user.iduniversity})
+    const university = await University.findOne({ _id: user.iduniversity });
     let url = null;
     if (user.perfil_photo !== null) {
       const getObjectParams = {
@@ -611,11 +611,11 @@ const uploadProfilePhoto = async (req, res, file) => {
         //ACL:'public-read'
       };
       const command = new GetObjectCommand(getObjectParams);
-      
+
       url = (await getSignedUrl(s3, command)).split("?")[0];
       res.status(200).json({
-       token,
-        user:{
+        token,
+        user: {
           _id: u._id,
           name: u.name,
           university: { name: university.name, _id: university._id },
@@ -724,7 +724,7 @@ const getUserById = async (req, res) => {
     let university =
       (await University.findOne({ _id: us.iduniversity })) || null;
     let faculty = await Faculty.findOne({ _id: us.idfaculty });
-    let subjects = await Subject.find({_id:{$in:us.idfavorite_subjects}})
+    let subjects = await Subject.find({ _id: { $in: us.idfavorite_subjects } });
     if (us === null) {
       return res.status(404).json({
         msg: "Perfil de usuario no existe",
@@ -737,21 +737,21 @@ const getUserById = async (req, res) => {
         Key: us.perfil_photo,
       };
       const command = new GetObjectCommand(getObjectParams);
-      url = (await getSignedUrl(s3, command)).split("?")[0]
+      url = (await getSignedUrl(s3, command)).split("?")[0];
     }
-    let sss = []
-   
-    for(let i=0;i<user.idfavorite_subjects.length;i++){
+    let sss = [];
+
+    for (let i = 0; i < user.idfavorite_subjects.length; i++) {
       let urlsss = null;
-      const s = await Subject.findOne({_id:user.idfavorite_subjects[i]})
+      const s = await Subject.findOne({ _id: user.idfavorite_subjects[i] });
       if (s.url_background_image !== null) {
         const getObjectParams = {
           Bucket: bucketProfilePhoto,
           Key: s.url_background_image,
         };
         const command = new GetObjectCommand(getObjectParams);
-        urlsss = (await getSignedUrl(s3, command)).split("?")[0]
-        sss.push({_id:s._id,name:s.name,url_background_image:urlsss})
+        urlsss = (await getSignedUrl(s3, command)).split("?")[0];
+        sss.push({ _id: s._id, name: s.name, url_background_image: urlsss });
       }
     }
     const tutories = await Tutory.find({
@@ -759,10 +759,10 @@ const getUserById = async (req, res) => {
         $elemMatch: { $eq: user._id },
       },
     });
-const stories = await Story.find({iduser:user._id})
-let ss=[]
-    for(let i=0;i<stories.length;i++){
-      let urlS=null
+    const stories = await Story.find({ iduser: user._id });
+    let ss = [];
+    for (let i = 0; i < stories.length; i++) {
+      let urlS = null;
 
       if (stories[i].multimedia !== null) {
         const getObjectParams = {
@@ -771,9 +771,13 @@ let ss=[]
         };
         const command = new GetObjectCommand(getObjectParams);
         urlS = (await getSignedUrl(s3, command)).split("?")[0];
-        }
-        ss.push({_id: stories[i]._id, message: stories[i].name, multimedia: urlS, author:{_id:user._id,perfil_photo:url,name:user.name}})
-
+      }
+      ss.push({
+        _id: stories[i]._id,
+        message: stories[i].name,
+        multimedia: urlS,
+        author: { _id: user._id, perfil_photo: url, name: user.name },
+      });
     }
     const user_res = {
       _id: us._id,
@@ -789,12 +793,11 @@ let ss=[]
       perfil_photo: url,
       subjects: sss,
       tutories,
-      stories:ss,
+      stories: ss,
       phone: us.phone,
-    }
+    };
 
-
-    res.status(200).json({user:user_res,token});
+    res.status(200).json({ user: user_res, token });
   } catch (error) {
     res.status(500).json({ succes: false, msg: "Error en servidor" });
   }
@@ -838,36 +841,37 @@ const updateUser = async (req, res) => {
       phone,
     } = req.body;
 
-    const t = getUnexpiredToken({ email, password })
+    const t = getUnexpiredToken({ email, password });
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    const u =  (await User.findByIdAndUpdate(
-      { _id: user._id },
-      {
-        name,
-        iduniversity,
-        email,
-        hashedPassword,
-        gender,
-        birthday,
-        biography,
-        idfaculty,
-        city_of_birth,
-        phone,
-      },
-      { new: true }
-    )) || null;
+    const u =
+      (await User.findByIdAndUpdate(
+        { _id: user._id },
+        {
+          name,
+          iduniversity,
+          email,
+          hashedPassword,
+          gender,
+          birthday,
+          biography,
+          idfaculty,
+          city_of_birth,
+          phone,
+        },
+        { new: true }
+      )) || null;
 
-    if(u===null){
-      res.status(500).json({msg:"Error actualizando usuario"})
+    if (u === null) {
+      res.status(500).json({ msg: "Error actualizando usuario" });
     }
 
-    res.status(200).json({r:u,token:t});
+    res.status(200).json({ r: u, token: t });
   } catch (error) {
     res.status(500).json({ succes: false, msg: "Error en servidor" });
   }
 };
 
-const addFavoriteSubjectAtList=async(req,res)=>{
+const addFavoriteSubjectAtList = async (req, res) => {
   try {
     // Aquí se verificaría si el token JWT enviado por el cliente es válido
     // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
@@ -892,16 +896,20 @@ const addFavoriteSubjectAtList=async(req,res)=>{
       });
     }
 
-    const {idsubject}=req.query
-    const u =await User.updateOne({ _id: user._id }, { $addToSet: { idfavorite_subjects: idsubject } },{new:true})
-     
-    res.json(u)
+    const { idsubject } = req.query;
+    const u = await User.updateOne(
+      { _id: user._id },
+      { $addToSet: { idfavorite_subjects: idsubject } },
+      { new: true }
+    );
+
+    res.json(u);
   } catch (error) {
     res.status(500).json({ succes: false, msg: "Error en servidor" });
   }
-}
+};
 
-const removeFavoriteSubjectFromList= async (req,res)=>{
+const removeFavoriteSubjectFromList = async (req, res) => {
   try {
     // Aquí se verificaría si el token JWT enviado por el cliente es válido
     // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
@@ -926,19 +934,19 @@ const removeFavoriteSubjectFromList= async (req,res)=>{
       });
     }
 
-    const {idsubject}=req.query
+    const { idsubject } = req.query;
     await User.updateOne(
       { _id: user._id },
       { $pull: { idfavorite_subjects: idsubject } },
       { new: true }
-)
- res.status(200).json(user)
+    );
+    res.status(200).json(user);
   } catch (error) {
     res.status(500).json({ succes: false, msg: "Error en servidor" });
   }
-}
+};
 
-const deleteUser= async (req,res)=>{
+const deleteUser = async (req, res) => {
   try {
     // Aquí se verificaría si el token JWT enviado por el cliente es válido
     // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
@@ -962,72 +970,71 @@ const deleteUser= async (req,res)=>{
         msg: "Token inválido",
       });
     }
-    let cont=0
+    let cont = 0;
 
-    const idcomment = await Comment.find({idauthor:user._id})
-    .catch((err) => {
-      return res.status(400).json({
-        success: false,
-        msg: "Error",
-      });
-    });
+    const idcomment = await Comment.find({ idauthor: user._id }).catch(
+      (err) => {
+        return res.status(400).json({
+          success: false,
+          msg: "Error",
+        });
+      }
+    );
 
     const tutories = await Tutory.find({
       idstudent_list: {
         $elemMatch: { $eq: user._id },
       },
-    })
-    .catch((err) => {
+    }).catch((err) => {
       return res.status(400).json({
         success: false,
         msg: "Error tutories",
       });
     });
-    for(let t = 0; t<tutories.length;t++){
+    for (let t = 0; t < tutories.length; t++) {
       await Tutory.findOneAndUpdate(
         { _id: tutories[t]._id },
         { $pull: { idstudent_list: user._id } }
       ).catch((err) => {
-          return res.status(400).json({
-            success: false,
-            msg: "Error eliminando user id de lista en tutory",
-          });
-        });      
+        return res.status(400).json({
+          success: false,
+          msg: "Error eliminando user id de lista en tutory",
+        });
+      });
     }
 
-   for(let i=0;i<idcomment.length;i++){
-    await Subject.findOneAndUpdate(
-      { _id: idcomment[i].idtarget },
-      { $pull: { idcomment_list: idcomment[i]._id } }
-    ).catch((err) => {
+    for (let i = 0; i < idcomment.length; i++) {
+      await Subject.findOneAndUpdate(
+        { _id: idcomment[i].idtarget },
+        { $pull: { idcomment_list: idcomment[i]._id } }
+      ).catch((err) => {
         return res.status(400).json({
           success: false,
           msg: "Error eliminando comentario de lista en Subject",
         });
       });
-   }
+    }
 
+    await Comment.deleteOne({ idauthor: user._id }).catch((err) => {
+      return res.status(400).json({
+        success: false,
+        msg: "Error eliminando comentario de base de datos",
+      });
+    });
 
-    await Comment.deleteOne({idauthor:user._id}).catch((err) => {
-        return res.status(400).json({
-          success: false,
-          msg: "Error eliminando comentario de base de datos",
-        });
-      })
-
-    const u=await User.deleteOne({_id:user._id}).catch((err) => {
+    const u = await User.deleteOne({ _id: user._id }).catch((err) => {
       return res.status(400).json({
         success: false,
         msg: "Error eliminando Usuario",
       });
     });
-    res.status(200).json({msg:"Usuario eliminado"})
+    res.status(200).json({ msg: "Usuario eliminado" });
   } catch (error) {
     res.status(500).json({ succes: false, msg: "Error en servidor" });
   }
-}
+};
 
-const createStory=async(req,res,file)=>{
+const createStory = async (req, res, file) => {
   try {
     // Aquí se verificaría si el token JWT enviado por el cliente es válido
     // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
@@ -1057,8 +1064,8 @@ const createStory=async(req,res,file)=>{
         msg: "Válido solo para rol student",
       });
     }
-    const {name,idsubject}=req.body
-    const imageName = file.originalname
+    const { name, idsubject } = req.body;
+    const imageName = file.originalname;
     const params = {
       Bucket: bucketSource,
       Key: imageName,
@@ -1067,23 +1074,29 @@ const createStory=async(req,res,file)=>{
     };
     const command = new PutObjectCommand(params);
     await s3.send(command);
-    const story = new Story({name:name,iduser:user._id,multimedia:imageName,idsubject:idsubject,idcomment_list:null})
-    await story.save()
+    const story = new Story({
+      name: name,
+      iduser: user._id,
+      multimedia: imageName,
+      idsubject: idsubject,
+      idcomment_list: null,
+    });
+    await story.save();
 
     const su = await Subject.findOneAndUpdate(
       { _id: idsubject },
       { $addToSet: { idstory_list: story._id } }, // El operador $addToSet agrega el estudiante solo si no existe aún
       { new: true } // Devuelve el registro actualizado
     );
-    res.status(200).json({story})
+    res.status(200).json({ story });
   } catch (error) {
     res.status(500).json({ succes: false, msg: "Error en servidor" });
   }
-}
+};
 
-const getAllUsers= async(req,res)=>{
-try {
-  // Aquí se verificaría si el token JWT enviado por el cliente es válido
+const getAllUsers = async (req, res) => {
+  try {
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
     // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
     const token = req.headers.authorization.split(" ")[1];
     if (!token) {
@@ -1105,11 +1118,13 @@ try {
     }
     //Recibo params
     const users = await User.find();
-    let results=[]
-    for(d of users){  
-      let university = (await University.findOne({ _id: d.iduniversity }));
-      let faculty = (await Faculty.findOne({_id:d.idfaculty}))
-      let subjects= await Subject.find({_id:{$in:d.idfavorite_subjects}})
+    let results = [];
+    for (d of users) {
+      let university = await University.findOne({ _id: d.iduniversity });
+      let faculty = await Faculty.findOne({ _id: d.idfaculty });
+      let subjects = await Subject.find({
+        _id: { $in: d.idfavorite_subjects },
+      });
       let url = null;
       if (d.perfil_photo !== null) {
         const getObjectParams = {
@@ -1117,7 +1132,7 @@ try {
           Key: d.perfil_photo,
         };
         const command = new GetObjectCommand(getObjectParams);
-        url =(await getSignedUrl(s3, command)).split("?")[0]
+        url = (await getSignedUrl(s3, command)).split("?")[0];
       }
       results.push({
         _id: d._id,
@@ -1131,21 +1146,21 @@ try {
         faculty: { _id: faculty._id, name: faculty.name },
         city_of_birth: d.city_of_birth,
         perfil_photo: url,
-        idfavorite_subjects: subjects.map(s=>{return {_id:s._id,name:s.name}}),
+        idfavorite_subjects: subjects.map((s) => {
+          return { _id: s._id, name: s.name };
+        }),
         phone: d.phone,
-      })
+      });
     }
 
-    res.status(200).json(results)
-} catch (error) {
-  res.status(500).json({ succes: false, msg: "Error en servidor" });
-}
-}
+    res.status(200).json(results);
+  } catch (error) {
+    res.status(500).json({ succes: false, msg: "Error en servidor" });
+  }
+};
 
-const getAllStoriesByIdUser= async(req,res)=>{
+const getAllStoriesByIdUser = async (req, res) => {
   try {
-
-  
     // Aquí se verificaría si el token JWT enviado por el cliente es válido
     // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
     const token = req.headers.authorization.split(" ")[1];
@@ -1176,45 +1191,42 @@ const getAllStoriesByIdUser= async(req,res)=>{
         msg: "Válido solo para rol student",
       });
     }
-    const stories = await Story.find({iduser:user._id})
-    let us= user
-    let st=[]
-    for (story of stories){
-      
-      let url = null
+    const stories = await Story.find({ iduser: user._id });
+    let us = user;
+    let st = [];
+    for (story of stories) {
+      let url = null;
       if (story.multimedia !== null) {
         const getObjectParams = {
           Bucket: bucketSource,
           Key: story.multimedia,
         };
-  
+
         const command = new GetObjectCommand(getObjectParams);
-         url = (await getSignedUrl(s3, command)).split("?")[0];
-      
+        url = (await getSignedUrl(s3, command)).split("?")[0];
       }
-      story.multimedia=url
-  
-      let urlProfilePhotoUser=null
+      story.multimedia = url;
+
+      let urlProfilePhotoUser = null;
       if (us.perfil_photo !== null) {
         const getObjectParams = {
           Bucket: bucketProfilePhoto,
           Key: us.perfil_photo,
         };
-  
+
         const command = new GetObjectCommand(getObjectParams);
         urlProfilePhotoUser = (await getSignedUrl(s3, command)).split("?")[0];
-      
       }
 
-      let comments =[]
-      if(story.idcomment_list!==null){
-        let cs = story.idcomment_list.map(s=>s.toString())
-       
-        for (comment of cs){
-          let urlUserComment=null
-          const c = await Comment.findOne({_id:comment})
-          const commenter = await User.findOne({_id:c.idauthor})
-        
+      let comments = [];
+      if (story.idcomment_list !== null) {
+        let cs = story.idcomment_list.map((s) => s.toString());
+
+        for (comment of cs) {
+          let urlUserComment = null;
+          const c = await Comment.findOne({ _id: comment });
+          const commenter = await User.findOne({ _id: c.idauthor });
+
           if (commenter.perfil_photo !== null) {
             const getObjectParams = {
               Bucket: bucketProfilePhoto,
@@ -1222,23 +1234,33 @@ const getAllStoriesByIdUser= async(req,res)=>{
             };
             const command = new GetObjectCommand(getObjectParams);
             urlUserComment = (await getSignedUrl(s3, command)).split("?")[0];
-          
           }
-          comments.push({_id:commenter._id, name:commenter.name, message: c.comment})
-         
+          comments.push({
+            _id: commenter._id,
+            name: commenter.name,
+            message: c.comment,
+          });
         }
       }
-      
-      st.push({_id:story.id,message:story.name,multimedia:story.multimedia,author:{_id:us._id,name:us.name,perfil_photo:urlProfilePhotoUser},comments:comments})
-     }
-   
-    res.status(200).json(st)
- 
 
+      st.push({
+        _id: story.id,
+        message: story.name,
+        multimedia: story.multimedia,
+        author: {
+          _id: us._id,
+          name: us.name,
+          perfil_photo: urlProfilePhotoUser,
+        },
+        comments: comments,
+      });
+    }
+
+    res.status(200).json(st);
   } catch (error) {
     res.status(500).json({ succes: false, msg: error });
   }
-}
+};
 module.exports = {
   registerUser,
   confirm,
@@ -1255,5 +1277,5 @@ module.exports = {
   deleteUser,
   createStory,
   getAllUsers,
-  getAllStoriesByIdUser
+  getAllStoriesByIdUser,
 };

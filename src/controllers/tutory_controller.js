@@ -8,11 +8,11 @@ const { getAnalytics } = require("firebase/analytics");
 const dotenv = require("dotenv");
 const admin = require("firebase-admin");
 const serviceAccount = require("../../untutor-notifications-firebase-adminsdk-xmbpo-01e725a99a.json");
-const crons = []; 
+const crons = [];
 dotenv.config();
 const cron = require("node-cron");
-admin.initializeApp({ 
-  credential: admin.credential.cert(serviceAccount)
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
 });
 const {
   getToken,
@@ -31,7 +31,7 @@ const saltRounds = parseInt(process.env.SALT_ROUNDS_ENCRYPT_PASSWORD);
 const bucketProfilePhoto = process.env.BUCKET_PROFILE_PHOTO;
 const bucketSource = process.env.BUCKET_SOURCE_UNTUTOR;
 const bucketRegion = process.env.BUCKET_REGION;
-const accessKey = process.env.AWS_ACCESS_KEY;
+const accessKey = process.env.AWS_ACCESS_KEY_BACKEND;
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
 const s3 = new S3Client({
   credentials: {
@@ -166,9 +166,8 @@ const getWeeklySchedule = async (req, res) => {
     const { idsubject, date_start, date_end } = req.query;
     let tutories = await Tutory.find({ idstudent_list: { $in: user._id } });
 
-    if ((idsubject != undefined)) {
-      tutories = tutories.filter((t) => t.idsubject.equals(idsubject)
-      );
+    if (idsubject != undefined) {
+      tutories = tutories.filter((t) => t.idsubject.equals(idsubject));
     }
     let t = [];
     /*const diffTime = Math.abs(dateStartDate - todayDate);
@@ -238,7 +237,7 @@ const getWeeklyScheduleBySubject = async (req, res) => {
       });
     }
     const { idsubject, date_start, date_end } = req.query;
-    let tutories = await Tutory.find({idsubject });
+    let tutories = await Tutory.find({ idsubject });
 
     let t = [];
     /*const diffTime = Math.abs(dateStartDate - todayDate);
@@ -285,8 +284,8 @@ const sendNotificationsAboutTutory = async (req, res) => {
         title: "Mi título de prueba 3",
         body: "Este es el cuerpo de mi mensaje de prueba.",
       },
-      token:""
-        };
+      token: "",
+    };
 
     // Enviar el mensaje a través de FCM
     admin
@@ -400,16 +399,17 @@ const removeStudentAtListTutory = async (req, res) => {
       { new: true }
     ).catch((err) => {
       return res.status(500).json({ msg: "" });
-    }); 
-    
-    const t = crons.find((c) => (c.id === tutory._id.toString())&& (c.idstudent === user._id.toString()));
-    if(t!=undefined){
+    });
+
+    const t = crons.find(
+      (c) =>
+        c.id === tutory._id.toString() && c.idstudent === user._id.toString()
+    );
+    if (t != undefined) {
       t.task.stop();
-      
     }
     //console.log("CRONS NUEVO: ",crons.length)
-      
-    
+
     res.status(200).json(tutory);
   } catch (error) {
     res.status(500).json({ success: false, msg: "Error en el servidor" });
@@ -492,64 +492,57 @@ const getTutoryById = async (req, res) => {
 
 const createProcess = async (req, res, tutory) => {
   try {
-    
-  const date_start = tutory.date_start.split(" ")[0];
-  const date_end = tutory.date_end.split(" ")[0];
-  const hour_start = tutory.date_start.split(" ")[1]; 
-  const month = parseInt(date_start.split("-")[1]);
-  const month_end = parseInt(date_end.split("-")[1]);
-  const hour = parseInt(hour_start.split(":")[0]);
-  const minute = parseInt(hour_start.split(":")[1]);
-  const d = getNumberDayWeek(date_start);
-  const device_tokens = [];
-  const idstudent_list = tutory.idstudent_list;
-  
+    const date_start = tutory.date_start.split(" ")[0];
+    const date_end = tutory.date_end.split(" ")[0];
+    const hour_start = tutory.date_start.split(" ")[1];
+    const month = parseInt(date_start.split("-")[1]);
+    const month_end = parseInt(date_end.split("-")[1]);
+    const hour = parseInt(hour_start.split(":")[0]);
+    const minute = parseInt(hour_start.split(":")[1]);
+    const d = getNumberDayWeek(date_start);
+    const device_tokens = [];
+    const idstudent_list = tutory.idstudent_list;
 
-  //recordar cada semana
-  for (let i = 0; i < idstudent_list.length; i++) {
-    const t = ((await User.findOne({ _id: idstudent_list[i] })))
-    let idstudent = null
-    let device_token=null
-    if(t!= null){ 
-      device_token= t.device_token
-      idstudent = t._id.toString()
-    }
-    const task =  cron.schedule(`0 ${minute} ${hour - 1} * ${month}-${month_end} ${(d + 1) % 7}`,
-     async () => {         
-     
-        const message = {
-          data: { ruta: "tutory", id: tutory._id.toString() },
-          notification: { 
-            title: `¡Recordatorio de tutoría de ${tutory.name}!`,
-            body: `Tutoría de ${tutory.name} empieza en 1 hora`,
-          },
-          token: device_token.toString(),
-        };  
-        // Enviar el mensaje a través de FCM   
-        admin
-          .messaging()
-          .send(message)   
-          .then((response) => { 
-            console.log("Enviado");
-          })
-          .catch((error) => { 
-            console.log("No enviado");
-          });
-      }, 
-      { 
-        scheduled: true,
-        timezone: "America/Bogota",
+    //recordar cada semana
+    for (let i = 0; i < idstudent_list.length; i++) {
+      const t = await User.findOne({ _id: idstudent_list[i] });
+      let idstudent = null;
+      let device_token = null;
+      if (t != null) {
+        device_token = t.device_token;
+        idstudent = t._id.toString();
       }
-    );
-    crons.push({ id: tutory._id.toString(),idstudent, task });
-    
-  }
-  
-
-  
-
+      const task = cron.schedule(
+        `0 ${minute} ${hour - 1} * ${month}-${month_end} ${(d + 1) % 7}`,
+        async () => {
+          const message = {
+            data: { ruta: "tutory", id: tutory._id.toString() },
+            notification: {
+              title: `¡Recordatorio de tutoría de ${tutory.name}!`,
+              body: `Tutoría de ${tutory.name} empieza en 1 hora`,
+            },
+            token: device_token.toString(),
+          };
+          // Enviar el mensaje a través de FCM
+          admin
+            .messaging()
+            .send(message)
+            .then((response) => {
+              console.log("Enviado");
+            })
+            .catch((error) => {
+              console.log("No enviado");
+            });
+        },
+        {
+          scheduled: true,
+          timezone: "America/Bogota",
+        }
+      );
+      crons.push({ id: tutory._id.toString(), idstudent, task });
+    }
   } catch (error) {
-    console.log("error: ", error) 
+    console.log("error: ", error);
   }
 };
 const getTutoriesByIdStudent = async (req, res) => {
@@ -606,5 +599,5 @@ module.exports = {
   getTutoriesByIdStudent,
   createProcess,
   crons,
-  getWeeklyScheduleBySubject
+  getWeeklyScheduleBySubject,
 };

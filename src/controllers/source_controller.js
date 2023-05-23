@@ -22,7 +22,7 @@ dotenv.config();
 const saltRounds = parseInt(process.env.SALT_ROUNDS_ENCRYPT_PASSWORD);
 const bucketSourceFile = process.env.BUCKET_SOURCE_UNTUTOR;
 const bucketRegion = process.env.BUCKET_REGION;
-const accessKey = process.env.AWS_ACCESS_KEY;
+const accessKey = process.env.AWS_ACCESS_KEY_BACKEND;
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
 const s3 = new S3Client({
   credentials: {
@@ -57,7 +57,7 @@ const createSource = async (req, res, file) => {
         msg: "Admin no existe, token inválido",
       });
     }
-    const imageName = file.originalname
+    const imageName = file.originalname;
 
     const params = {
       Bucket: bucketSourceFile,
@@ -66,7 +66,7 @@ const createSource = async (req, res, file) => {
       ContentType: file.mimetype,
     };
     const command = new PutObjectCommand(params);
-    
+
     let source = await Source.findOne({ name: req.body.name });
     if (source !== null) {
       return res.status(409).json({
@@ -140,7 +140,7 @@ const getSourceById = async (req, res) => {
     let url = null;
     if (source.url_file !== null) {
       const command = new GetObjectCommand(getObjectParams);
-      url =(await getSignedUrl(s3, command)).split("?")[0];
+      url = (await getSignedUrl(s3, command)).split("?")[0];
     }
     res.json({
       _id: source._id,
@@ -182,23 +182,27 @@ const deleteSourceById = async (req, res) => {
         msg: "Admin no existe, token inválido",
       });
     }
-    const result=[]
+    const result = [];
     const { idsource, idsubject } = req.query;
     await Subject.updateOne(
       { _id: idsubject },
       { $pull: { idsource_list: idsource } }
-    ).then(data=> result.push(data)).catch((err) => {
-      return res.status(400).json({
-        success: false,
-        msg: "Error eliminando recurso de lista en Subject",
+    )
+      .then((data) => result.push(data))
+      .catch((err) => {
+        return res.status(400).json({
+          success: false,
+          msg: "Error eliminando recurso de lista en Subject",
+        });
       });
-    });
 
-    await Source.deleteOne({ _id: idsource }).then(data=> result.push(data)).catch((err) => {
-      return res
-        .status(400)
-        .json({ success: false, msg: "Error eliminando recurso" });
-    });
+    await Source.deleteOne({ _id: idsource })
+      .then((data) => result.push(data))
+      .catch((err) => {
+        return res
+          .status(400)
+          .json({ success: false, msg: "Error eliminando recurso" });
+      });
 
     res.json(result);
   } catch (error) {

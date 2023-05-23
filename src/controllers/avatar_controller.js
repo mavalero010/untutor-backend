@@ -20,7 +20,7 @@ dotenv.config();
 const saltRounds = parseInt(process.env.SALT_ROUNDS_ENCRYPT_PASSWORD);
 const bucketProfilePhoto = process.env.BUCKET_PROFILE_PHOTO;
 const bucketRegion = process.env.BUCKET_REGION;
-const accessKey = process.env.AWS_ACCESS_KEY;
+const accessKey = process.env.AWS_ACCESS_KEY_BACKEND;
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
 const s3 = new S3Client({
   credentials: {
@@ -31,8 +31,8 @@ const s3 = new S3Client({
 });
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
-const createAvatar = async (req,res,file)=>{
-    try {
+const createAvatar = async (req, res, file) => {
+  try {
     // Aquí se verificaría si el token JWT enviado por el cliente es válido
     // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
     const token = req.headers.authorization.split(" ")[1];
@@ -55,7 +55,6 @@ const createAvatar = async (req,res,file)=>{
       });
     }
 
-  
     const params = {
       Bucket: bucketProfilePhoto,
       Key: file.originalname,
@@ -65,25 +64,21 @@ const createAvatar = async (req,res,file)=>{
     const command = new PutObjectCommand(params);
     await s3.send(command);
 
-    
-    const avatar = new Avatar({name:file.originalname})
+    const avatar = new Avatar({ name: file.originalname });
     await avatar.save().then((data) =>
-    res.status(200).json({
-      data,
-      success: true,
-      msg: "Avatar creado",
-    })
-  );
-    
-    } catch (error) {
-        res
-        .status(500)
-        .json({ succes: false, msg: "Error en servidor" });
-    }
-}
+      res.status(200).json({
+        data,
+        success: true,
+        msg: "Avatar creado",
+      })
+    );
+  } catch (error) {
+    res.status(500).json({ succes: false, msg: "Error en servidor" });
+  }
+};
 
-const getAvatars = async (req,res)=>{
-    try {
+const getAvatars = async (req, res) => {
+  try {
     // Aquí se verificaría si el token JWT enviado por el cliente es válido
     // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
     const token = req.headers.authorization.split(" ")[1];
@@ -105,14 +100,13 @@ const getAvatars = async (req,res)=>{
         msg: "Usuario no existe o contraseña inválida",
       });
     }
-    const avatars = await Avatar.find()
-    res.status(200).json(avatars)
-
-    } catch (error) {
-        res.status(500).json({ success: false, msg: "Error en controlador" });  
-    }
-}
+    const avatars = await Avatar.find();
+    res.status(200).json(avatars);
+  } catch (error) {
+    res.status(500).json({ success: false, msg: "Error en controlador" });
+  }
+};
 module.exports = {
-    createAvatar,
-    getAvatars
-  };
+  createAvatar,
+  getAvatars,
+};
