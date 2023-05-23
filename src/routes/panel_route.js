@@ -53,4 +53,11 @@ routerUser.get(`/api/${process.env.VERSION_API}/panel/tutories`, panelController
 routerUser.get(`/api/${process.env.VERSION_API}/panel/tutories/:id`, panelController.getTutoriesByIdSubjects)
 routerUser.delete(`/api/${process.env.VERSION_API}/panel/tutories/tutory/:id`, panelController.deleteTutoryById)
 
+//sources
+routerUser.get(`/api/${process.env.VERSION_API}/panel/sources/source/:id`, panelController.getSourceById)
+routerUser.get(`/api/${process.env.VERSION_API}/panel/sources`, panelController.getSources)
+routerUser.get(`/api/${process.env.VERSION_API}/panel/sources/:id`, panelController.getSourcesByIdSubjects)
+routerUser.delete(`/api/${process.env.VERSION_API}/panel/sources/source/:id`, panelController.deleteSourceById)
+
+
 module.exports = routerUser

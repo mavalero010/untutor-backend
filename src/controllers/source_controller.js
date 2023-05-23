@@ -83,6 +83,11 @@ const createSource = async (req, res, file) => {
       idsubject: req.body.idsubject,
       idcomment_list: [],
     });
+    await Subject.findOneAndUpdate(
+      { _id: req.body.idsubject },
+      { $addToSet: { idsource_list: source._id } }, // El operador $addToSet agrega el source solo si no existe aún
+      { new: true } // Devuelve el registro actualizado
+    );
     await source.save().then((data) =>
       res.status(200).json({
         data,

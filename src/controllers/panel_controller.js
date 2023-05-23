@@ -7,6 +7,7 @@ const Subject = require("../models/subject_model");
 const Comment =require("../models/comment_model")
 const Eventos = require("../models/event_model");
 const Tutory = require("../models/tutory_model");
+const Source = require("../models/source_model");
 
 const bcrypt = require("bcrypt");
 const {
@@ -1148,6 +1149,151 @@ const deleteTutoryById =async(req,res)=>{
   }
 }
 
+//sources
+const getSources = async(req,res)=>{
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //endpoint
+    const recurso = await Source.find()
+    res.status(200).json(recurso);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      msg: "Admin no existe, token inválido",
+    });
+  }
+}
+
+const getSourcesByIdSubjects =async(req,res)=>{
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //endpoint
+    const recurso = await Source.find({idsubject:req.params.id})
+    res.status(200).json(recurso);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      msg: "Admin no existe, token inválido",
+    });
+  }
+}
+
+const getSourceById =async(req,res)=>{
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //endpoint
+    const recurso = await Source.findById(req.params.id)
+    res.status(200).json(recurso);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      msg: "Admin no existe, token inválido",
+    });
+  }
+}
+
+const deleteSourceById =async(req,res)=>{
+  try {
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({ message: "No se proporcionó un token" });
+    }
+
+    //Decodifico Token
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    //Lo busco en BD
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+
+    if (!validateInfo) {
+      return res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    const result=[]
+    const { id } = req.params.id;
+    const source = await Source.findById(id);
+    await Subject.updateOne(
+      { _id: source.idsubject },
+      { $pull: { idsource_list: source._id } }
+    ).then(data=> result.push(data)).catch((err) => {
+      return res.status(400).json({
+        success: false,
+        msg: "Error eliminando recurso de lista en Subject",
+      });
+    });
+
+    await Source.deleteOne({ _id: idsource }).then(data=> result.push(data)).catch((err) => {
+      return res
+        .status(400)
+        .json({ success: false, msg: "Error eliminando recurso" });
+    });
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      succes: false,
+      msg: "Error en el servidor",
+    });
+  }
+}
+
 module.exports = {
   //users
   getUsers,
@@ -1187,5 +1333,10 @@ module.exports = {
   getTutoriesByIdSubjects,
   postTutory,
   getTutoryById,
-  deleteTutoryById
+  deleteTutoryById,
+  //sources
+  getSources,
+  getSourcesByIdSubjects,
+  getSourceById,
+  deleteSourceById
 };
