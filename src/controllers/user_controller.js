@@ -1065,15 +1065,19 @@ const createStory = async (req, res, file) => {
       });
     }
     const { name, idsubject } = req.body;
-    const imageName = file.originalname;
-    const params = {
-      Bucket: bucketSource,
-      Key: imageName,
-      Body: file.buffer, //buffer
-      ContentType: file.mimetype,
-    };
-    const command = new PutObjectCommand(params);
-    await s3.send(command);
+    let imageName = null
+    if(file!==undefined){
+       imageName = file.originalname;
+      const params = {
+        Bucket: bucketSource,
+        Key: imageName,
+        Body: file.buffer, //buffer
+        ContentType: file.mimetype,
+      };
+      const command = new PutObjectCommand(params);
+      await s3.send(command);
+    }
+
     const story = new Story({
       name: name,
       iduser: user._id,
