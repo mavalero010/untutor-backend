@@ -1314,7 +1314,7 @@ const getLinkSourceById = async (req, res) => {
         msg: "Admin no existe, token inválido",
       });
     }
-    const { id } = req.query;
+    const { id } = req.params.id;
 
     let source = await Source.findOne({ _id: id });
     const getObjectParams = {
