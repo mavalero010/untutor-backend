@@ -163,15 +163,12 @@ const getWeeklySchedule = async (req, res) => {
         msg: "Válido solo para rol student",
       });
     }
-    const { idsubject, date_start, date_end, show_only_user } = req.query;
+    const { idsubject, date_start, date_end } = req.query;
     let tutories = await Tutory.find({ idstudent_list: { $in: user._id } });
 
-    if ((idsubject != undefined) && (show_only_user===true)) {
-      tutories = tutories.filter((t) =>
-        t.idstudent_list.some((objectId) => objectId.equals(user._id))
+    if ((idsubject != undefined)) {
+      tutories = tutories.filter((t) => t.idsubject.equals(idsubject)
       );
-    }else if(show_only_user===false){
-      tutories = await Tutory.find({idsubject})
     }
     let t = [];
     /*const diffTime = Math.abs(dateStartDate - todayDate);
@@ -208,6 +205,75 @@ const getWeeklySchedule = async (req, res) => {
   }
 };
 
+const getWeeklyScheduleBySubject = async (req, res) => {
+  try {
+    // Aquí se verificaría si el token JWT enviado por el cliente es válido
+    // En este ejemplo, lo simulamos decodificando el token y comprobando si el ID del usuario existe
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "No se proporcionó un token" });
+    }
+
+    //Decodifico Token
+    const dataUserDecoded = getTokenData(token);
+    const mail = dataUserDecoded.data.email;
+    //Lo busco en BD
+    let user = (await User.findOne({ email: mail })) || null;
+
+    //valido que la info decodificada del token sea válida
+    const validateInfo = authTokenDecoded(dataUserDecoded, user);
+
+    if (!validateInfo) {
+      return res.status(401).json({
+        success: false,
+        msg: "Usuario no existe o contraseña inválida",
+      });
+    }
+
+    //Verifica que el user sea de rol student
+    if (user.role !== "student") {
+      return res.status(401).json({
+        success: false,
+        msg: "Válido solo para rol student",
+      });
+    }
+    const { idsubject, date_start, date_end } = req.query;
+    let tutories = await Tutory.find({idsubject });
+
+    let t = [];
+    /*const diffTime = Math.abs(dateStartDate - todayDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+*/
+    const days = generateDatesBetween(date_start, date_end);
+    days.forEach((d) => {
+      let tu = tutories
+        .filter(
+          (t) =>
+            new Date(t.date_start.split(" ")[0]) <= new Date(d) &&
+            new Date(t.date_end.split(" ")[0]) >= new Date(d) &&
+            Math.abs(
+              new Date(d).getTime() -
+                new Date(t.date_start.split(" ")[0]).getTime()
+            ) %
+              7 ===
+              0
+        )
+        .map((e) => {
+          return {
+            start: e.date_start.split(" ")[1],
+            end: e.date_end.split(" ")[1],
+            available: e.available,
+            _id: e._id,
+            duration: parseInt(e.duration),
+          };
+        });
+      t.push({ date: d, tutories: tu });
+    });
+    res.json(t);
+  } catch (error) {
+    res.status(500).json({ success: false, msg: "Error en servidor" });
+  }
+};
 const sendNotificationsAboutTutory = async (req, res) => {
   try {
     admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
@@ -219,9 +285,8 @@ const sendNotificationsAboutTutory = async (req, res) => {
         title: "Mi título de prueba 3",
         body: "Este es el cuerpo de mi mensaje de prueba.",
       },
-      token:
-        "cz7icM5DRaKU1eYnxJFWwT:APA91bG4TTS3nZiWtSBBhhWRUF1GbUFceKerT7rEWViuGLybpCZqIbO_hllBDdj32FAvckKMUeVu8GGHe5b4Z8Q2gjd7dsUPzbM79R3o7-Pi-Rp_V9mbTFyTQV4kXPqXME_SZqf8tZKl",
-    };
+      token:""
+        };
 
     // Enviar el mensaje a través de FCM
     admin
@@ -540,5 +605,6 @@ module.exports = {
   getTutoryById,
   getTutoriesByIdStudent,
   createProcess,
-  crons
+  crons,
+  getWeeklyScheduleBySubject
 };
