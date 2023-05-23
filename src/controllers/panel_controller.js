@@ -1294,6 +1294,55 @@ const deleteSourceById =async(req,res)=>{
   }
 }
 
+const getLinkSourceById = async (req, res) => {
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    const { id } = req.query;
+
+    let source = await Source.findOne({ _id: id });
+    const getObjectParams = {
+      Bucket: bucketSourceFile,
+      Key: source.url_file,
+    };
+    let url = null;
+    if (source.url_file !== null) {
+      const command = new GetObjectCommand(getObjectParams);
+      url = (await getSignedUrl(s3, command)).split("?")[0];
+    }
+    res.json({
+      _id: source._id,
+      name: source.name,
+      description: source.description,
+      category: source.category,
+      url_file: url,
+      idsubject: source.idsubject,
+      idcomment_list: source.idcomment_list,
+    });
+  } catch (error) {
+    res.status(500).json({
+      succes: false,
+      msg: "Error en el servidor",
+    });
+  }
+};
+
 module.exports = {
   //users
   getUsers,
@@ -1338,5 +1387,6 @@ module.exports = {
   getSources,
   getSourcesByIdSubjects,
   getSourceById,
-  deleteSourceById
+  deleteSourceById,
+  getLinkSourceById
 };
