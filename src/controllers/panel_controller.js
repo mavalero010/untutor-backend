@@ -16,7 +16,23 @@ const {
   authTokenDecoded,
   getUnexpiredToken,
 } = require("../config/jwt.config");
-
+const {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} = require("@aws-sdk/client-s3");
+const bucketSourceFile = process.env.BUCKET_SOURCE_UNTUTOR;
+const bucketRegion = process.env.BUCKET_REGION;
+const accessKey = process.env.AWS_ACCESS_KEY_BACKEND;
+const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+const s3 = new S3Client({
+  credentials: {
+    accessKeyId: accessKey,
+    secretAccessKey: secretAccessKey,
+  },
+  region: bucketRegion,
+});
 const dotenv = require("dotenv");
 dotenv.config();
 const saltRounds = parseInt(process.env.SALT_ROUNDS_ENCRYPT_PASSWORD);
