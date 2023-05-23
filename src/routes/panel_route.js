@@ -5,8 +5,6 @@ dotenv.config()
 
 const routerUser = Router()
 
-
-routerUser.post(`/api/${process.env.VERSION_API}/panel/blog`, panelController.postBlog)
 //users
 routerUser.post(`/api/${process.env.VERSION_API}/panel/users/user`, panelController.postUser)
 routerUser.get(`/api/${process.env.VERSION_API}/panel/users/user/:id`, panelController.getUserById)
@@ -47,5 +45,12 @@ routerUser.delete(`/api/${process.env.VERSION_API}/panel/blogs/blog/:id`, panelC
 routerUser.get(`/api/${process.env.VERSION_API}/panel/comments/comment/:id`, panelController.getCommentById)
 routerUser.get(`/api/${process.env.VERSION_API}/panel/comments`, panelController.getComments)
 routerUser.delete(`/api/${process.env.VERSION_API}/panel/comments/comment/:id`, panelController.deleteCommentById)
+
+//tutories
+routerUser.post(`/api/${process.env.VERSION_API}/panel/tutories/tutory`, panelController.postTutory)
+routerUser.get(`/api/${process.env.VERSION_API}/panel/tutories/tutory/:id`, panelController.getTutoryById)
+routerUser.get(`/api/${process.env.VERSION_API}/panel/tutories`, panelController.getTutories)
+routerUser.get(`/api/${process.env.VERSION_API}/panel/tutories/:id`, panelController.getTutoriesByIdSubjects)
+routerUser.delete(`/api/${process.env.VERSION_API}/panel/tutories/tutory/:id`, panelController.deleteTutoryById)
 
 module.exports = routerUser

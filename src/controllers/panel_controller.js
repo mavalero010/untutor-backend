@@ -6,6 +6,7 @@ const Faculty = require("../models/faculty_model");
 const Subject = require("../models/subject_model");
 const Comment =require("../models/comment_model")
 const Eventos = require("../models/event_model");
+const Tutory = require("../models/tutory_model");
 
 const bcrypt = require("bcrypt");
 const {
@@ -190,16 +191,6 @@ const getUserById =async(req,res)=>{
   }
 }
 
-// const patchUsers =async(req,res)=>{
-//   try {
-//       const usuario = await User.findOneAndUpdate({ _id: req.params.id}, req.body);
-//       const resultado = await usuario.save();
-//       res.status(200).json(resultado);
-//   } catch (err) {
-//       res.status(500).json(err);
-//   }
-// }
-
 const deleteUserById =async(req,res)=>{
   try {
     //verificar token
@@ -228,6 +219,7 @@ const deleteUserById =async(req,res)=>{
   }
 }
 
+//universities
 const getUniversities = async(req,res)=>{
   try {
     //verificar token
@@ -975,6 +967,186 @@ const deleteCommentById =async(req,res)=>{
     res.status(500).json(err);
   }
 }
+//tutories
+const getTutories = async(req,res)=>{
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //endpoint
+    const tutoria = await Tutory.find()
+    res.status(200).json(tutoria);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      msg: "Admin no existe, token inválido",
+    });
+  }
+}
+
+const postTutory=async(req,res)=>{
+  try {
+      //verificar token
+      const token = req.headers.authorization.split(" ")[1];
+      if (!token) {
+        return res.status(401).json({ message: "No se proporcionó un token" });
+      }
+      const dataAdminDecoded = getTokenData(token);
+      const mail = dataAdminDecoded.data.email;
+      let admin = (await Admin.findOne({ email: mail })) || null;
+      const validateInfo = authTokenDecoded(dataAdminDecoded, admin)
+      if (!validateInfo) {
+          return res.status(401).json({
+              success: false,
+              msg: "Admin no existe, token inválido",
+          });
+      }
+      //endpoint
+      let {
+        name,
+        description,
+        idtutor,
+        idstudent_list,
+        idsubject,
+        date_start,
+        date_end,
+        duration,
+        location,
+        is_virtual,
+        available,
+      } = req.body;
+     
+      let tutoria = new Tutory({
+        name,
+        description,
+        idtutor,
+        idstudent_list,
+        idsubject,
+        date_start,
+        date_end,
+        duration,
+        location,
+        is_virtual,
+        available,
+      });
+  
+      await tutoria.save().then((data) =>
+        res.status(200).json({
+          data,
+          success: true,
+          msg: "Tutoria registrado",
+        })
+      );
+  
+    } catch (error) {
+      res.status(500).json({ msg: "Error en servidor " });
+    }
+}
+
+const getTutoriesByIdSubjects =async(req,res)=>{
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //endpoint
+    const tutoria = await Tutory.find({idsubject:req.params.id})
+    res.status(200).json(tutoria);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      msg: "Admin no existe, token inválido",
+    });
+  }
+}
+
+const getTutoryById =async(req,res)=>{
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //endpoint
+    const tutoria = await Tutory.findById(req.params.id)
+    res.status(200).json(tutoria);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      msg: "Admin no existe, token inválido",
+    });
+  }
+}
+
+const deleteTutoryById =async(req,res)=>{
+  try {
+    //verificar token
+    const token = req.headers.authorization.split(" ")[1];
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        message: "No se proporcionó un token"
+      });
+    }
+    const dataAdminDecoded = getTokenData(token);
+    const mail = dataAdminDecoded.data.email;
+    let admin = (await Admin.findOne({ email: mail })) || null;
+    const validateInfo = authTokenDecoded(dataAdminDecoded, admin);
+    if (!validateInfo) {
+      res.status(401).json({
+        success: false,
+        msg: "Admin no existe, token inválido",
+      });
+    }
+    //endpoint
+    const tutoria = await Tutory.findByIdAndDelete(req.params.id)
+    res.status(200).json(tutoria);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+}
 
 module.exports = {
   //users
@@ -1010,4 +1182,10 @@ module.exports = {
   getComments,
   getCommentById,
   deleteCommentById,
+  //tutories
+  getTutories,
+  getTutoriesByIdSubjects,
+  postTutory,
+  getTutoryById,
+  deleteTutoryById
 };
