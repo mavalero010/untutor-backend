@@ -1287,7 +1287,7 @@ const deleteSourceById =async(req,res)=>{
     const source = await Source.findById(id);
     await Subject.updateOne(
       { _id: source.idsubject },
-      { $pull: { idsource_list: source._id } }
+      { $pull: { idsource_list: id } }
     ).then(data=> result.push(data)).catch((err) => {
       return res.status(400).json({
         success: false,
@@ -1295,7 +1295,7 @@ const deleteSourceById =async(req,res)=>{
       });
     });
 
-    await Source.deleteOne({ _id: idsource }).then(data=> result.push(data)).catch((err) => {
+    await Source.deleteOne({ _id: id }).then(data=> result.push(data)).catch((err) => {
       return res
         .status(400)
         .json({ success: false, msg: "Error eliminando recurso" });
